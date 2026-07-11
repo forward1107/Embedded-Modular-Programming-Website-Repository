@@ -1,0 +1,856 @@
+<!DOCTYPE html><html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="description" content="嵌入式模块化编程学习平台 - 涵盖GPIO封装、PID控制、运动规划等20道嵌入式控制类编程练习题，支持在线编译运行与进度管理">
+<meta name="keywords" content="嵌入式编程,模块化编程,嵌入式学习,嵌入式控制,STM32,PID控制,GPIO,BLDC,运动控制,C语言学习">
+<meta name="author" content="嵌入式编程学习平台">
+<!-- 网站图标配置说明:
+     请将图标文件命名为 favicon.ico，并与 index.html 放置在同一根目录下，
+     否则图标无法显示。
+-->
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<!--[if IE]><link rel="shortcut icon" href="favicon.ico"><![endif]-->
+<script>(function(){if(window.location.protocol==="file:"){document.addEventListener("DOMContentLoaded",function(){var b=document.createElement("div");b.className="file-protocol-banner";b.innerHTML='⚠️ 检测到 file:// 协议。部分功能需要网络服务。建议使用本地服务器打开：<code>python -m http.server 8080</code> 或 VS Code Live Server';document.body.prepend(b);});}})();</script>
+<title>嵌入式模块化编程学习平台</title>
+
+<style>
+/* ===== Variables & Reset ===== */
+:root{--bg:#1e1e1e;--bg2:#252526;--bg3:#2d2d2d;--border:#3c3c3c;--text:#ccc;--text2:#888;--accent:#007acc;--accent2:#4ec9b0;--red:#f44747;--orange:#d7ba7d;--green:#4ec9b0;--ease:cubic-bezier(0.4,0,0.2,1)}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+a{color:#3794ff;text-decoration:none}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#424242;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#555}
+
+/* ===== Animations ===== */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeOut{from{opacity:1}to{opacity:0}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes toastIn{from{opacity:0;transform:translateY(60px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(60px)}}
+@keyframes skeletonPulse{0%{opacity:0.6}50%{opacity:1}100%{opacity:0.6}}
+.anim-fade{animation:fadeIn 0.3s var(--ease)}
+.anim-slide{animation:slideInRight 0.35s var(--ease)}
+.anim-card-exit{animation:fadeOut 0.25s var(--ease) forwards}
+.anim-card-enter{animation:fadeIn 0.3s var(--ease) 0.1s both}
+
+/* ===== Login ===== */
+#login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#1e1e1e,#2d2d2d);z-index:2000;display:flex;align-items:center;justify-content:center}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:40px;width:400px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,0.5);animation:fadeIn 0.4s var(--ease)}
+.login-box h1{color:var(--accent2);font-size:24px;text-align:center;margin-bottom:4px}
+.login-box .sub{color:var(--text2);text-align:center;font-size:13px;margin-bottom:24px}
+.login-box .tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px}
+.login-box .tab{flex:1;padding:10px;text-align:center;cursor:pointer;font-size:14px;color:var(--text2);border-bottom:2px solid transparent;transition:all 0.2s var(--ease)}
+.login-box .tab.active{color:var(--accent2);border-bottom-color:var(--accent2)}
+.form-group{margin-bottom:14px}.form-group label{display:block;color:#aaa;font-size:12px;margin-bottom:4px}
+.form-group input{width:100%;padding:10px 12px;background:#3c3c3c;border:1px solid #555;border-radius:4px;color:var(--text);font-size:14px;outline:none;transition:border-color 0.2s var(--ease)}
+.form-group input:focus{border-color:var(--accent)}
+.btn{display:block;width:100%;padding:10px;border:none;border-radius:4px;font-size:14px;cursor:pointer;font-weight:600;transition:all 0.15s var(--ease);position:relative;overflow:hidden}
+.btn:hover{opacity:0.9}.btn:active{transform:translateY(1px)}.btn-primary{background:var(--accent);color:#fff}
+.auth-err{color:var(--red);font-size:13px;text-align:center;margin-top:8px;display:none}
+.auth-switch{text-align:center;margin-top:14px;font-size:13px;color:var(--text2)}
+.auth-switch a{color:#3794ff;cursor:pointer}
+.remember-row{display:flex;align-items:center;gap:8px;margin-top:10px;color:var(--text2);font-size:13px}
+.remember-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent2)}
+
+/* ===== Skeleton ===== */
+.skeleton{background:linear-gradient(90deg,#2d2d2d 25%,#3c3c3c 50%,#2d2d2d 75%);background-size:400px 100%;animation:shimmer 1.5s infinite;border-radius:4px}
+.skeleton-card{height:180px;border-radius:10px;margin-bottom:20px}
+
+/* ===== App Shell ===== */
+#app{display:none;height:100vh}
+#app.active{display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;padding:10px 20px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;gap:14px;z-index:10}
+.topbar .logo{color:var(--accent2);font-size:16px;font-weight:700;cursor:pointer;transition:opacity 0.2s var(--ease)}
+.topbar .logo:hover{opacity:0.8}
+.topbar .top-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.topbar .email{font-size:13px;color:var(--text2)}
+.topbar .logout-btn{background:none;border:1px solid #555;color:#aaa;font-size:12px;padding:4px 10px;border-radius:3px;cursor:pointer;transition:all 0.2s var(--ease)}
+.topbar .logout-btn:hover{color:var(--red);border-color:var(--red)}
+.topbar .back-btn{background:none;border:none;color:var(--text2);font-size:13px;cursor:pointer;display:none;align-items:center;gap:4px;transition:color 0.2s var(--ease)}
+.topbar .back-btn:hover{color:var(--text)}.topbar .back-btn.show{display:flex}
+.topbar .version-badge{font-size:10px;background:var(--accent);color:#fff;padding:2px 8px;border-radius:10px;font-weight:600}
+
+/* ===== Home Page ===== */
+#home-page{flex:1;overflow-y:auto;display:none;padding:40px 20px}
+#home-page.show{display:block;animation:fadeIn 0.3s var(--ease)}
+#home-page h2{color:#ddd;font-size:22px;text-align:center;margin-bottom:8px}
+#home-page .hint{color:#666;font-size:13px;text-align:center;margin-bottom:32px}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;max-width:900px;margin:0 auto}
+.cat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:28px;cursor:pointer;transition:all 0.25s var(--ease);position:relative;overflow:hidden;animation:fadeIn 0.4s var(--ease)}
+.cat-card:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 6px 24px rgba(0,122,204,0.15)}
+.cat-card:active{transform:scale(0.98)}
+.cat-card .cat-icon{font-size:40px;margin-bottom:12px}
+.cat-card .cat-name{font-size:18px;color:#ddd;font-weight:600;margin-bottom:6px}
+.cat-card .cat-desc{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px}
+.cat-card .cat-progress{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--accent2)}
+.cat-card .cat-progress-bar{flex:1;height:4px;background:#333;border-radius:2px;overflow:hidden}
+.cat-card .cat-progress-bar .fill{height:100%;background:var(--accent2);border-radius:2px;transition:width 0.5s var(--ease)}
+
+/* ===== Level Page ===== */
+#level-page{flex:1;display:none;overflow:hidden}
+#level-page.show{display:flex}
+.sidebar{width:300px;min-width:300px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.main-content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.sidebar-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;font-size:13px;color:var(--text2)}
+.sidebar-header .cat-name{color:#ddd;font-weight:600}
+.progress-summary{padding:8px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;font-size:12px;color:var(--text2);flex-shrink:0}
+.sdot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.sdot-red{background:var(--red)}.sdot-green{background:var(--green)}
+.level-group{margin-bottom:2px}
+.level-header{padding:6px 16px;font-size:11px;letter-spacing:1px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;transition:color 0.2s var(--ease)}
+.level-header:hover{color:#aaa}.level-header .arrow{font-size:10px;transition:transform 0.25s var(--ease)}
+.level-header .arrow.collapsed{transform:rotate(-90deg)}
+.level-body{overflow:hidden;transition:max-height 0.3s var(--ease)}
+.level-body.collapsed{max-height:0!important}
+.challenge-list{flex:1;overflow-y:auto;padding:4px 0}
+.challenge-item{display:flex;align-items:center;padding:9px 16px;cursor:pointer;border-left:3px solid transparent;transition:all 0.2s var(--ease)}
+.challenge-item:hover{background:#2a2d2e}.challenge-item.active{background:#37373d;border-left-color:var(--accent)}
+.challenge-item.locked{opacity:0.4;cursor:default}.challenge-item.locked:hover{background:transparent}
+.challenge-item .num{width:28px;font-size:12px;font-weight:600;flex-shrink:0;color:#666}
+.challenge-item.locked .num{color:#555}.challenge-item .name{flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.challenge-item.locked .name{color:#555}
+.challenge-item .sdot2{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-left:8px;transition:all 0.3s var(--ease)}
+.challenge-item .sdot2.locked-dot{background:transparent;border:2px solid #555}
+.challenge-item .sdot2.unlocked-dot{background:var(--red);box-shadow:0 0 4px #f4474766}
+.challenge-item .sdot2.inprogress-dot{background:var(--orange);box-shadow:0 0 4px #d7ba7d66}
+.challenge-item .sdot2.completed-dot{background:var(--green);box-shadow:0 0 4px #4ec9b066}
+.challenge-item.active .name{color:#fff}
+
+/* ===== Toast ===== */
+.toast-container{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+.toast-item{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 24px;display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,0.5);animation:toastIn 0.3s var(--ease);pointer-events:auto}
+.toast-item.removing{animation:toastOut 0.3s var(--ease) forwards}
+.toast-item .ti{font-size:20px}
+
+/* ===== Content Header + Tabs ===== */
+.content-header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.content-header h2{color:#ddd;font-size:15px;font-weight:500}
+.content-header .lvl-badge{background:#007acc22;color:var(--accent);border:1px solid #007acc44;font-size:11px;padding:2px 10px;border-radius:10px}
+.tab-bar{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;padding:0 12px}
+.tab-btn{padding:9px 16px;font-size:13px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s var(--ease);background:none;border-top:0;border-left:0;border-right:0}
+.tab-btn:hover{color:var(--text)}.tab-btn.active{color:#fff;border-bottom-color:var(--accent);background:var(--bg3)}
+.tab-content{flex:1;display:none;overflow:hidden}
+.tab-content.active{display:flex;flex-direction:column;animation:fadeIn 0.25s var(--ease)}
+.tab-content#tab-detail{display:none;overflow-y:auto;padding:12px 20px}
+.tab-content#tab-detail.active{display:block;overflow-y:auto}
+.detail-section{margin-bottom:10px}
+.detail-label{font-size:10px;letter-spacing:1px;color:var(--text2);margin-bottom:4px;font-weight:600}
+.detail-text{color:var(--text);font-size:13px;line-height:1.6}
+.detail-text ul{padding-left:18px;margin:4px 0}.detail-text li{margin-bottom:2px;list-style:disc}
+
+/* ===== Example / Editor ===== */
+#example-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#example-wrap .editor-container{flex:1;min-height:0}
+#editor-tab-body{flex:1;display:flex;overflow:hidden;min-height:0}
+.file-tree{width:220px;min-width:80px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;position:relative;transition:width 0.3s var(--ease)}
+.file-tree-header{padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;font-size:12px;color:var(--text2)}
+.file-tree-header .collapse-btn{background:none;border:1px solid #555;color:var(--text2);font-size:10px;padding:2px 6px;border-radius:3px;cursor:pointer;transition:all 0.2s var(--ease)}
+.file-tree-header .collapse-btn:hover{color:var(--text);border-color:#888}
+.file-tree-body{flex:1;overflow-y:auto;padding:4px 0;font-size:13px;user-select:none}
+.ft-item{display:flex;align-items:center;gap:3px;padding:3px 12px;cursor:pointer;transition:background 0.2s var(--ease)}
+.ft-item:hover{background:#2a2d2e}.ft-item.active{background:#37373d;color:#fff}
+.ft-item .ft-icon{flex-shrink:0;font-size:14px;width:18px;text-align:center}
+.ft-item .ft-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.ft-item .ft-arrow{font-size:10px;color:var(--text2);width:14px;flex-shrink:0;text-align:center;cursor:pointer;transition:transform 0.25s var(--ease)}
+.ft-item .ft-arrow.rotated{transform:rotate(90deg)}
+.ft-item .ft-arrow:hover{color:var(--text)}
+.ft-children{overflow:hidden;transition:max-height 0.35s var(--ease)}
+
+/* Split Pane */
+.resize-handle{width:4px;cursor:col-resize;background:#333;flex-shrink:0;position:relative;transition:background 0.15s}
+.resize-handle:hover,.resize-handle.active{background:var(--accent)}
+.resize-handle::after{content:'';position:absolute;left:-3px;right:-3px;top:0;bottom:0}
+#editor-holder{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#editor-holder .editor-container{flex:1;min-height:0}
+
+/* Editor Loading Placeholder */
+.editor-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:var(--bg);color:var(--text2);font-size:14px;gap:12px}
+.editor-loading .spinner{width:28px;height:28px;border:3px solid #333;border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
+
+/* ===== Action Bar + Terminal ===== */
+.action-bar{padding:6px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;min-height:42px}
+.btn-green{background:#238636;color:#fff;border:none;padding:7px 16px;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s var(--ease)}
+.btn-green:hover{background:#2ea043}.btn-green:active{transform:translateY(1px)}.btn-green:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+.btn-green .spinner-sm{display:inline-block;width:14px;height:14px;border:2px solid #ffffff66;border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite}
+.btn-amber{background:var(--orange);color:#1e1e1e;border:none;padding:7px 16px;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s var(--ease)}
+.btn-amber:hover{background:#e0c888}.btn-amber:active{transform:translateY(1px)}
+.btn-outline{background:transparent;border:1px solid #555;color:var(--text);padding:6px 12px;border-radius:4px;font-size:12px;cursor:pointer;transition:all 0.2s var(--ease)}
+.btn-outline:hover{border-color:#aaa}.btn-outline:active{transform:translateY(1px)}
+.si{font-size:13px;margin-left:auto;display:flex;align-items:center;gap:6px}
+
+#terminal-wrap{background:#0d0d0d;border-top:1px solid #333;height:150px;overflow:hidden;display:none;flex-shrink:0;flex-direction:column}
+#terminal-wrap.open{display:flex}
+#terminal-hdr{display:flex;align-items:center;gap:8px;padding:4px 16px;background:#1a1a1a;border-bottom:1px solid #333;flex-shrink:0}
+#terminal-hdr span{font-size:11px;color:var(--text2)}#terminal-hdr button{background:none;border:1px solid #555;color:var(--text2);font-size:11px;padding:2px 8px;border-radius:3px;cursor:pointer;transition:all 0.2s var(--ease)}
+#terminal-hdr button:hover{color:var(--text);border-color:#888}
+#terminal-out{flex:1;overflow-y:auto;padding:8px 16px;font-family:'Consolas',monospace;font-size:13px;color:#d4d4d4;white-space:pre-wrap}
+#terminal-out .err{color:var(--red)}#terminal-out .ok{color:var(--green)}#terminal-out .info{color:#888;font-style:italic}
+
+/* ===== Error Page ===== */
+.error-page{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px}
+.error-page .err-icon{font-size:48px}.error-page .err-text{color:var(--text2);font-size:15px;text-align:center;max-width:400px;line-height:1.6}
+.error-page .retry-btn{background:var(--accent);color:#fff;border:none;padding:10px 24px;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s var(--ease)}
+.error-page .retry-btn:hover{opacity:0.9}.error-page .retry-btn:active{transform:translateY(1px)}
+
+/* ===== Modals ===== */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.active{display:flex;animation:fadeIn 0.2s var(--ease)}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:8px;width:480px;max-width:95vw;max-height:85vh;overflow-y:auto;padding:28px;position:relative;animation:slideInRight 0.3s var(--ease)}
+.modal h2{color:var(--accent2);margin-bottom:16px;font-size:18px}
+.modal-close{position:absolute;top:14px;right:18px;color:var(--text2);font-size:20px;cursor:pointer;background:none;border:none;line-height:1;transition:color 0.2s var(--ease)}
+.modal-close:hover{color:#fff}
+.upload-msg{font-size:12px;padding:3px 0;display:none}
+.upload-msg.success{color:var(--green);display:block}.upload-msg.error{color:var(--red);display:block}
+
+/* ===== Context Menu ===== */
+.file-tree-context{position:fixed;background:var(--bg2);border:1px solid #555;border-radius:4px;padding:4px 0;min-width:150px;z-index:500;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.5);animation:fadeIn 0.15s var(--ease)}
+.file-tree-context .ctx-item{padding:6px 14px;font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:6px;transition:background 0.15s var(--ease)}
+.file-tree-context .ctx-item:hover{background:#094771;color:#fff}
+.file-tree-context .ctx-sep{height:1px;background:var(--border);margin:4px 0}
+
+@media(max-width:1024px){.sidebar{width:260px;min-width:260px}}
+.file-protocol-banner{position:fixed;top:0;left:0;right:0;z-index:99999;background:#f44747;color:#fff;padding:10px 20px;text-align:center;font-size:14px;font-family:sans-serif;animation:slideInRight 0.3s var(--ease)}
+.file-protocol-banner code{background:#ffffff33;padding:2px 8px;border-radius:3px;margin:0 6px}
+main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+</style></head><body>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- LOGIN -->
+<div id="login-overlay"><div class="login-box">
+<h1>⚡ 嵌入式模块化编程</h1><p class="sub">控制类编程练习闯关平台</p>
+<div class="tabs"><div class="tab active" id="tab-login" onclick="switchAuthTab('login')">登录</div><div class="tab" id="tab-register" onclick="switchAuthTab('register')">注册</div></div>
+<div id="auth-login">
+<div class="form-group"><label>邮箱</label><input type="email" id="login-email" placeholder="your@email.com"></div>
+<div class="form-group"><label>密码</label><input type="password" id="login-pass" placeholder="至少6位" onkeydown="if(event.key==='Enter')handleLogin()"></div>
+<div class="remember-row"><input type="checkbox" id="remember-me" checked><label for="remember-me">记住我</label></div>
+<button class="btn btn-primary" onclick="handleLogin()" id="login-btn">登 录</button>
+<div class="auth-err" id="login-err"></div>
+<div class="auth-switch">没有账号？<a onclick="switchAuthTab('register')">注册新账号</a></div></div>
+<div id="auth-register" style="display:none">
+<div class="form-group"><label>邮箱</label><input type="email" id="reg-email" placeholder="your@email.com"></div>
+<div class="form-group"><label>密码</label><input type="password" id="reg-pass" placeholder="至少6位"></div>
+<div class="form-group"><label>确认密码</label><input type="password" id="reg-confirm" placeholder="再次输入" onkeydown="if(event.key==='Enter')handleRegister()"></div>
+<button class="btn btn-primary" onclick="handleRegister()" id="reg-btn">注 册</button>
+<div class="auth-err" id="reg-err"></div>
+<div class="auth-switch">已有账号？<a onclick="switchAuthTab('login')">返回登录</a></div></div>
+</div></div>
+
+<!-- APP -->
+<div id="app">
+<header>
+<div class="topbar">
+<span class="logo" onclick="goHome()">⚡ 嵌入编程</span><span class="version-badge">v2.1</span>
+<span class="back-btn" id="back-btn" onclick="goHome()">◀ 返回练习广场</span>
+<div class="top-right"><span class="email" id="top-email"></span><span id="user-count-badge" style="font-size:11px;color:#888;background:#2d2d2d;padding:2px 8px;border-radius:10px;border:1px solid #444"></span><button class="logout-btn" onclick="handleLogout()">退出</button></div>
+</div>
+</header>
+<main>
+
+<!-- Home Page -->
+<div id="home-page"><h2>🏋️ 练习广场</h2><p class="hint">选择一个训练大类开始你的嵌入式模块化编程之旅</p><div id="home-user-count" style="text-align:center;font-size:12px;color:#666;margin-bottom:16px"></div>
+<div id="home-skeleton" style="display:none;max-width:900px;margin:0 auto"><div class="skeleton skeleton-card"></div></div>
+<div class="cat-grid" id="cat-grid"></div></div>
+
+<!-- Level Page -->
+<div id="level-page">
+<div class="sidebar"><div class="sidebar-header">📂 <span class="cat-name" id="sidebar-cat-name">嵌入式控制类</span><span style="color:#555;font-size:11px;margin-left:auto" id="sidebar-cat-count">20题</span></div>
+<div class="progress-summary" id="progress-summary"><div class="stat"><span class="sdot sdot-red"></span> <span id="stat-available">0</span> 可用</div><div class="stat"><span class="sdot sdot-green"></span> <span id="stat-completed">0</span> 已完成</div></div>
+<div class="challenge-list" id="challenge-list"></div></div>
+<div class="main-content" id="main-content">
+<div class="content-header"><h2 id="detail-title">选择一道题目开始练习</h2><span class="lvl-badge" id="detail-lvl"></span></div>
+<div class="tab-bar" id="tab-bar" style="display:none">
+<button class="tab-btn active" data-tab="detail" onclick="switchTab('detail')">📖 题目详情</button>
+<button class="tab-btn" data-tab="example" onclick="switchTab('example')">📝 示例代码</button>
+<button class="tab-btn" data-tab="code" onclick="switchTab('code')">💻 代码编辑器</button></div>
+<div class="tab-content active" id="tab-detail"><div style="overflow-y:auto;padding:12px 20px">
+<div class="detail-section"><div class="detail-label">🎯 目标</div><div class="detail-text" id="detail-goal"></div></div>
+<div class="detail-section"><div class="detail-label">📋 要求</div><div class="detail-text" id="detail-req"></div></div>
+<div class="detail-section"><div class="detail-label">💡 提示</div><div class="detail-text" id="detail-hints"></div></div>
+<div class="detail-section"><div class="detail-label">🧪 测试验证</div><div class="detail-text" id="detail-test"></div></div></div></div>
+<div class="tab-content" id="tab-example"><div id="example-wrap"><div class="editor-container" id="example-editor-container"></div></div></div>
+<div class="tab-content" id="tab-code"><div id="editor-tab-body">
+<div class="file-tree" id="file-tree-panel"><div class="file-tree-header"><span id="ft-title">文件</span><button class="collapse-btn" onclick="toggleFileTree()">◀ 收起</button></div><div class="file-tree-body" id="file-tree-body" oncontextmenu="return false"></div></div>
+<div class="resize-handle" id="resize-handle"></div>
+<div id="editor-holder"><div class="editor-loading" id="editor-loading"><div class="spinner"></div><span>编辑器加载中...</span></div><div class="editor-container" id="user-editor-container" style="display:none"></div></div></div></div>
+<div class="action-bar" id="action-bar" style="display:none">
+<button class="btn-green" onclick="runCode()" id="run-btn">▶ 运行</button>
+<button class="btn-amber" onclick="markComplete()">✅ 标记完成</button>
+<button class="btn-outline" onclick="saveToLocal()">💾 保存到本地</button>
+<button class="btn-outline" onclick="openUploadModal()">⬆ GitHub</button>
+<button class="btn-outline" onclick="shareLink()">🔗 分享</button>
+<div class="si"><span style="color:var(--text2);font-size:12px">状态：</span><span id="status-label" style="font-size:13px;font-weight:600">—</span></div></div>
+<div id="terminal-wrap"><div id="terminal-hdr"><span>▶ 终端输出</span><button onclick="clearTerminal()">清空</button><button onclick="hideTerminal()">收起</button></div><div id="terminal-out"></div></div>
+</div></div></div>
+</main>
+<footer style="text-align:center;padding:8px 16px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;font-size:11px;color:#555">
+<span>嵌入式模块化编程学习平台 v2.1</span>
+</footer>
+
+<div class="modal-overlay" id="upload-modal"><div class="modal"><button class="modal-close" onclick="closeUploadModal()">&times;</button><h2>⬆ 上传到 GitHub</h2>
+<div class="form-group"><label>PAT</label><input type="password" id="gh-token" placeholder="ghp_xxx"></div>
+<div class="form-group"><label>仓库</label><input type="text" id="gh-repo" placeholder="owner/repo"></div>
+<div class="form-group"><label>分支</label><input type="text" id="gh-branch" placeholder="main"></div>
+<div class="form-group"><label>路径</label><input type="text" id="gh-path" placeholder="level01/main.c"></div>
+<div class="form-group"><label>提交信息</label><input type="text" id="gh-msg" placeholder="Add solution"></div>
+<div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-primary" onclick="uploadToGitHub()" style="flex:1">确认</button><button class="btn" onclick="closeUploadModal()" style="flex:1;background:#555;color:#fff">取消</button></div>
+<div id="upload-status" class="upload-msg" style="margin-top:8px"></div></div></div>
+
+<div class="file-tree-context" id="ctx-menu">
+<div class="ctx-item" data-action="new-file" onclick="ctxAction('new-file')">📄 新建文件</div>
+<div class="ctx-item" data-action="new-folder" onclick="ctxAction('new-folder')">📁 新建文件夹</div>
+<div class="ctx-sep"></div><div class="ctx-item" data-action="rename" onclick="ctxAction('rename')">✏️ 重命名</div>
+<div class="ctx-item" data-action="delete" onclick="ctxAction('delete')">🗑️ 删除</div></div>
+
+<!-- Error Page (hidden, shown via JS) -->
+<div class="error-page" id="error-page" style="display:none">
+<div class="err-icon">⚠️</div><div class="err-text" id="err-text">发生了未知错误</div>
+<button class="retry-btn" onclick="retryInit()">重试</button></div>
+
+<!--
+  外部 CDN 资源说明：
+  以下脚本从 CDN 加载，在 file:// 协议下仍然有效（浏览器会正常发起 HTTPS 请求）。
+  - Firebase: 用户登录与云端进度同步
+  - Monaco Editor: 代码编辑器
+  - JSZip: 保存到本地时的 ZIP 下载回退方案
+  如果网络不通，请确保设备已联网。
+-->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+<script>
+// ===================================================================
+// CONFIG
+// ===================================================================
+const firebaseConfig = {apiKey:"YOUR_API_KEY",authDomain:"YOUR_PROJECT.firebaseapp.com",projectId:"YOUR_PROJECT_ID",storageBucket:"YOUR_PROJECT.appspot.com",messagingSenderId:"YOUR_SENDER_ID",appId:"YOUR_APP_ID"};
+const categories = [{id:"control",name:"嵌入式控制类",icon:"⚙️",description:"从GPIO封装到双轴运动控制，涵盖嵌入式工业自动化的核心技能",count:20}];
+const LEVEL_ORDER = ['基础篇','进阶篇','工程师篇','综合项目'];
+
+// ===================================================================
+// PRACTICE DATA (20道)
+// ===================================================================
+const practiceData = [
+  {id:1,category:"基础篇",title:"GPIO模块化封装与按键消抖",goal:"用结构体封装GPIO端口、引脚、模式，实现按键消抖状态机。",requirements:["定义 gpio_t 结构体","实现 gpio_init/gpio_write/gpio_read","10ms延时消抖状态机"],hints:["volatile 修饰寄存器","3状态：空闲→抖动确认→稳定"],testMethod:"两个按键控制两个LED亮灭，串口打印事件。",exampleCode:"/* gpio_t 结构体 + 按键消抖状态机 */\n\n#include \"stdint.h\"\n#include \"stdio.h\"\n\n// 简单的 GPIO 模拟结构体\n\ntypedef struct {\n    uint8_t pin_state;\n    uint8_t direction;\n} gpio_t;\n\n// 按键消抖状态机状态定义\n\ntypedef enum {\n    KEY_IDLE = 0,\n    KEY_PRESSED_DEBOUNCE,\n    KEY_RELEASED_DEBOUNCE\n} key_state_t;\n\n// 简单的延时函数模拟\n\nvoid delay_ms(uint32_t ms) {\n    // 在真实嵌入式环境中，这里会是定时器操作\n    // 在PC模拟环境中，可以使用空循环或 sleep\n    for(volatile uint32_t i = 0; i < ms * 1000; i++);\n}\n\nint main() {\n    gpio_t my_button = {0};\n    key_state_t current_state = KEY_IDLE;\n\n    printf(\"System Initialized.\\n\");\n\n    while(1) {\n        // 模拟读取按键电平 (0表示按下，1表示松开)\n        // 在实际硬件中，这里会是 HAL_GPIO_ReadPin()\n        my_button.pin_state = read_hardware_pin();\n\n        switch(current_state) {\n            case KEY_IDLE:\n                if(my_button.pin_state == 0) {\n                    current_state = KEY_PRESSED_DEBOUNCE;\n                }\n                break;\n\n            case KEY_PRESSED_DEBOUNCE:\n                delay_ms(20); // 消抖延时\n                if(my_button.pin_state == 0) {\n                    printf(\"Key Pressed and Debounced!\\n\");\n                    current_state = KEY_RELEASED_DEBOUNCE;\n                } else {\n                    current_state = KEY_IDLE;\n                }\n                break;\n\n            case KEY_RELEASED_DEBOUNCE:\n                delay_ms(20);\n                if(my_button.pin_state == 1) {\n                    current_state = KEY_IDLE;\n                }\n                break;\n        }\n    }\n    return 0;\n}",files:[{name:"Inc",type:"folder",children:[{name:"gpio.h",type:"file",content:"// gpio.h"},{name:"button.h",type:"file",content:"// button.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"gpio.c",type:"file",content:"// gpio.c"},{name:"button.c",type:"file",content:"// button.c"}]}],activeFile:"Src/main.c"},
+  {id:2,category:"基础篇",title:"系统时钟与毫秒级软件定时器",goal:"基于SysTick实现毫秒级延时和软件定时器池。",requirements:["delay_ms()","swtmr_create/start/stop/delete","单向链表管理"],hints:["SysTick中断递减","临界区保护","节点字段：周期/剩余/回调/标志"],testMethod:"3个定时器100/200/500ms翻转LED。",exampleCode:"// 第2关",files:[{name:"Inc",type:"folder",children:[{name:"swtmr.h",type:"file",content:"// swtmr.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"swtmr.c",type:"file",content:"// swtmr.c"}]}],activeFile:"Src/main.c"},
+  {id:3,category:"基础篇",title:"微秒级延时与PWM生成",goal:"使用通用定时器产生微秒级延时和PWM信号。",requirements:["delay_us()","pwm_init(TIM,freq,duty)"],hints:["PWM=时钟/(ARR+1)/(PSC+1)","CCR/(ARR+1)=占空比"],testMethod:"1kHz/50%方波",exampleCode:"// 第3关",files:[{name:"Inc",type:"folder",children:[{name:"pwm.h",type:"file",content:"// pwm.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"}]}],activeFile:"Src/main.c"},
+  {id:4,category:"基础篇",title:"ADC采样与均值滤波",goal:"配置ADC+DMA实现连续采样和滑动平均滤波。",requirements:["ADC1连续+DMA环形缓冲区","adc_read_average()","adc_get_raw()"],hints:["DMA半满中断","位运算取模","2^n大小缓冲区"],testMethod:"电位器分压，串口对比原始/滤波值。",exampleCode:"// 第4关",files:[{name:"Inc",type:"folder",children:[{name:"adc.h",type:"file",content:"// adc.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"adc.c",type:"file",content:"// adc.c"}]}],activeFile:"Src/main.c"},
+  {id:5,category:"基础篇",title:"一阶低通滤波器",goal:"浮点和Q15定点一阶低通滤波器。",requirements:["lpf_init()","lpf_update() (float)","Q15定点实现"],hints:["y[n]=αx+(1-α)y[n-1]","α≈2πfc/fs/(2πfc/fs+1)","Q15: alpha*32768"],testMethod:"含噪正弦波滤波对比。",exampleCode:"// 第5关",files:[{name:"Inc",type:"folder",children:[{name:"lpf.h",type:"file",content:"// lpf.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"lpf.c",type:"file",content:"// lpf.c"}]}],activeFile:"Src/main.c"},
+  {id:6,category:"基础篇",title:"增量式PID控制器",goal:"PID控制器含抗积分饱和、微分先行。",requirements:["pid_init()","pid_calc()","梯形积分+微分先行"],hints:["结构体含integral/prev_error/prev_output","积分分离阈值"],testMethod:"控制一阶惯性系统跟踪方波。",exampleCode:"// 第6关",files:[{name:"Inc",type:"folder",children:[{name:"pid.h",type:"file",content:"// pid.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"pid.c",type:"file",content:"// pid.c"}]}],activeFile:"Src/main.c"},
+  {id:7,category:"基础篇",title:"编码器M/T测速",goal:"M/T法测速兼顾低速和高速。",requirements:["encoder_init/get_count/get_speed_rpm","M/T: speed=M*60/(T*PPR)","低速T法"],hints:["两定时器","溢出处理","T法低速/M法高速"],testMethod:"模拟脉冲串口打印转速。",exampleCode:"// 第7关",files:[{name:"Inc",type:"folder",children:[{name:"encoder.h",type:"file",content:"// encoder.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"encoder.c",type:"file",content:"// encoder.c"}]}],activeFile:"Src/main.c"},
+  {id:8,category:"进阶篇",title:"梯形加减速运动规划",goal:"梯形速度曲线发生器。",requirements:["trapz_init/get_target_pos/is_done","三段式+三角形"],hints:["ta=vmax/a","Sa=0.5*a*ta²"],testMethod:"位移10000步",exampleCode:"// 第8关",files:[{name:"Inc",type:"folder",children:[{name:"trapz.h",type:"file",content:"// trapz.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"trapz.c",type:"file",content:"// trapz.c"}]}],activeFile:"Src/main.c"},
+  {id:9,category:"进阶篇",title:"串口环形缓冲+不定长接收",goal:"可靠串口收发模块。",requirements:["环形缓冲收发各一","3.5字符超时定帧","uart_send_buf/recv_byte/frame_ready"],hints:["2^n大小缓冲区","3.5*10/baud"],testMethod:"PC发任意字符串回显。",exampleCode:"// 第9关",files:[{name:"Inc",type:"folder",children:[{name:"uart.h",type:"file",content:"// uart.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"uart.c",type:"file",content:"// uart.c"}]}],activeFile:"Src/main.c"},
+  {id:10,category:"进阶篇",title:"Modbus RTU从站",goal:"Modbus RTU 03/06功能码。",requirements:["modbus_init/rx_byte","状态机解析","自动应答回调"],hints:["CRC16查表","IDLE→ADDR→FUNC→DATA→CRC"],testMethod:"PC串口发Modbus查询。",exampleCode:"// 第10关",files:[{name:"Inc",type:"folder",children:[{name:"modbus.h",type:"file",content:"// modbus.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"modbus.c",type:"file",content:"// modbus.c"}]}],activeFile:"Src/main.c"},
+  {id:11,category:"进阶篇",title:"I2C-MPU6050驱动",goal:"I2C通信+MPU6050驱动。",requirements:["I2C读写函数","MPU6050 init/read_accel"],hints:["地址0x68","唤醒PWR_MGMT_1"],testMethod:"静止串口打印角度。",exampleCode:"// 第11关",files:[{name:"Inc",type:"folder",children:[{name:"mpu6050.h",type:"file",content:"// mpu6050.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"mpu6050.c",type:"file",content:"// mpu6050.c"}]}],activeFile:"Src/main.c"},
+  {id:12,category:"进阶篇",title:"SPI-W25Q64驱动",goal:"SPI通信+Flash读写。",requirements:["SPI读写","读ID/擦除扇区/页写入/连续读"],hints:["先擦后写4KB","等待忙标志"],testMethod:"写数据断电重启比对。",exampleCode:"// 第12关",files:[{name:"Inc",type:"folder",children:[{name:"w25q64.h",type:"file",content:"// w25q64.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"w25q64.c",type:"file",content:"// w25q64.c"}]}],activeFile:"Src/main.c"},
+  {id:13,category:"进阶篇",title:"双环PID控制",goal:"位置环+速度环级联控制。",requirements:["位置环→速度环设定值","速度环→PWM","dual_loop_init/update"],hints:["内环带宽5~10倍外环","位置环输出限最大速度"],testMethod:"阶跃位置指令10圈。",exampleCode:"// 第13关",files:[{name:"Inc",type:"folder",children:[{name:"dual_pid.h",type:"file",content:"// dual_pid.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"dual_pid.c",type:"file",content:"// dual_pid.c"}]}],activeFile:"Src/main.c"},
+  {id:14,category:"进阶篇",title:"PWM死区+互补输出",goal:"TIM1死区插入和互补输出。",requirements:["TIM1 CH1+CH1N互补","1μs死区","刹车功能"],hints:["BDTR控制死区和刹车","死区=DTG×Tclk"],testMethod:"示波器观察互补PWM。",exampleCode:"// 第14关",files:[{name:"Inc",type:"folder",children:[{name:"hbridge.h",type:"file",content:"// hbridge.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"hbridge.c",type:"file",content:"// hbridge.c"}]}],activeFile:"Src/main.c"},
+  {id:15,category:"进阶篇",title:"BLDC六步换向",goal:"BLDC开环启动+闭环换相。",requirements:["读霍尔状态","状态表控制MOSFET","开环强拖→闭环"],hints:["120°霍尔6状态","换相续流"],testMethod:"示波器观察换相时序。",exampleCode:"// 第15关",files:[{name:"Inc",type:"folder",children:[{name:"bldc.h",type:"file",content:"// bldc.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"bldc.c",type:"file",content:"// bldc.c"}]}],activeFile:"Src/main.c"},
+  {id:16,category:"工程师篇",title:"电子齿轮/电子凸轮",goal:"多电机精确同步。",requirements:["主从=主轴×齿轮比","凸轮Lookup Table","从轴PID跟踪"],hints:["齿轮比可分数","凸轮补偿速度"],testMethod:"模拟主轴匀速记录从轴误差。",exampleCode:"// 第16关",files:[{name:"Inc",type:"folder",children:[{name:"sync.h",type:"file",content:"// sync.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"sync.c",type:"file",content:"// sync.c"}]}],activeFile:"Src/main.c"},
+  {id:17,category:"工程师篇",title:"扰动观测器DOB",goal:"DOB估计负载扰动前馈补偿。",requirements:["标称模型P=K/(Js+B)","逆模型+Q滤波器"],hints:["Q截止频率决定带宽","高频快但对噪声敏感"],testMethod:"阶跃负载比较有无DOB。",exampleCode:"// 第17关",files:[{name:"Inc",type:"folder",children:[{name:"dob.h",type:"file",content:"// dob.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"dob.c",type:"file",content:"// dob.c"}]}],activeFile:"Src/main.c"},
+  {id:18,category:"工程师篇",title:"龙伯格观测器(无传感器)",goal:"仅V/i估算直流电机转速。",requirements:["模型V=Ri+Ldi/dt+Keω","龙伯格观测器"],hints:["状态[ω;i]","极点配置3~5倍"],testMethod:"比较真实/估计速度。",exampleCode:"// 第18关",files:[{name:"Inc",type:"folder",children:[{name:"observer.h",type:"file",content:"// observer.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"observer.c",type:"file",content:"// observer.c"}]}],activeFile:"Src/main.c"},
+  {id:19,category:"工程师篇",title:"两轴直线插补",goal:"X-Y直线插补+加减速控制。",requirements:["梯形/S形合成位移","motion_plan/update"],hints:["L=√(dx²+dy²)","x=x0+(dx/L)*s"],testMethod:"模拟运行检查路径是否为直线。",exampleCode:"// 第19关",files:[{name:"Inc",type:"folder",children:[{name:"motion.h",type:"file",content:"// motion.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"motion.c",type:"file",content:"// motion.c"}]}],activeFile:"Src/main.c"},
+  {id:20,category:"综合项目",title:"两轴运动控制与远程监控",goal:"整合所有模块的完整工业级控制平台。",requirements:["运动规划","单轴PID+编码器","电子齿轮","Modbus RTU","故障保护","调度器"],hints:["先搭骨架","实时性保障","故障≤1ms硬中断"],testMethod:["分辨率≤1μm","速度100mm/s","同步≤10μm","Modbus≤2ms","故障≤1ms"],exampleCode:"// 第20关",files:[{name:"Inc",type:"folder",children:[{name:"system.h",type:"file",content:"// system.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"scheduler.c",type:"file",content:"// scheduler.c"}]}],activeFile:"Src/main.c"}
+];
+
+// ===================================================================
+// STATE
+// ===================================================================
+let currentUser=null,currentExercise=null;
+let userEditor=null,exampleEditor=null,monacoLoaded=false,firebaseInitialized=false;
+let progress={completedLevels:[]},tabState={},ctxTargetPath=null,ctxTargetPathType='file';
+let fileTreeCollapsed=false,folderOpenState={};
+let initError=null;
+
+// ===================================================================
+// TOAST SYSTEM
+// ===================================================================
+function showToast(icon,text,duration){
+    duration=duration||3000;const container=document.getElementById('toast-container');
+    const item=document.createElement('div');item.className='toast-item';
+    item.innerHTML='<span class="ti">'+icon+'</span><span>'+text+'</span>';container.appendChild(item);
+    setTimeout(()=>{item.classList.add('removing');setTimeout(()=>item.remove(),300);},duration);
+}
+
+// ===================================================================
+// MONACO
+// ===================================================================
+const monacoReady=new Promise(r=>{window.__monacoResolve=r;});
+// Monaco 加载超时检测 (file:// 协议下 worker 可能失败)
+setTimeout(function(){
+  if(!window.monacoLoaded){
+    console.warn("Monaco加载超时，尝试重试...");
+    var el=document.getElementById("editor-loading");
+    if(el)el.innerHTML='<span style="color:var(--orange)">⌛ 编辑器加载中，请确保网络连接...</span>';
+  }
+},8000);
+require.config({paths:{vs:'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs'}});
+require(['vs/editor/editor.main'],function(){window.__monacoResolve();monacoLoaded=true;
+    monaco.editor.defineTheme('custom-dark',{base:'vs-dark',inherit:true,
+        rules:[{token:'keyword',foreground:'569cd6'},{token:'type',foreground:'4ec9b0'},{token:'string',foreground:'ce9178'},{token:'comment',foreground:'6a9955',fontStyle:'italic'},{token:'number',foreground:'b5cea8'},{token:'function',foreground:'dcdcaa'},{token:'preprocessor',foreground:'c586c0'}],
+        colors:{'editor.background':'#1e1e1e','editor.foreground':'#d4d4d4','editorCursor.foreground':'#aeafad','editor.selectionBackground':'#264f78','editorBracketMatch.background':'#0a0a0a','editorBracketMatch.border':'#888','editorBracketPairGuide.activeBackground1':'#ffd70033','editorBracketPairGuide.background1':'#ffd70011'}});
+    monaco.languages.registerCompletionItemProvider('c',{triggerCharacters:['.',' ','#','('],provideCompletionItems:function(){
+        return {suggestions:[{label:'#include',kind:monaco.languages.CompletionItemKind.Snippet,insertText:'#include <$1>',insertTextRules:monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet},
+            {label:'main',kind:monaco.languages.CompletionItemKind.Snippet,insertText:'int main(void) {\n    $1\n    return 0;\n}',insertTextRules:monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet},
+            {label:'for',kind:monaco.languages.CompletionItemKind.Snippet,insertText:'for(int $1=0;$1<$2;$1++){\n    $3\n}',insertTextRules:monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet},
+            {label:'struct',kind:monaco.languages.CompletionItemKind.Snippet,insertText:'typedef struct{$1}$2_t;',insertTextRules:monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet},
+            {label:'#define',kind:monaco.languages.CompletionItemKind.Snippet,insertText:'#define $1 $2',insertTextRules:monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet},
+            {label:'printf',kind:monaco.languages.CompletionItemKind.Snippet,insertText:'printf("$1",$2);',insertTextRules:monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet},
+            {label:'HAL_GPIO_WritePin',kind:monaco.languages.CompletionItemKind.Function,insertText:'HAL_GPIO_WritePin($1,$2,$3);',insertTextRules:monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet},
+            {label:'volatile',kind:monaco.languages.CompletionItemKind.Keyword,insertText:'volatile '}]};}});
+});
+
+async function initEditors(){
+    await monacoReady;
+    document.getElementById('editor-loading').style.display='flex';
+    try{
+        // Create example code editor (read-only)
+        if(!exampleEditor){
+            exampleEditor=monaco.editor.create(document.getElementById('example-editor-container'),{value:'',language:'c',theme:'custom-dark',readOnly:true,fontSize:14,fontFamily:"'JetBrains Mono','Fira Code','Consolas',monospace",fontLigatures:true,lineNumbers:'on',minimap:{enabled:false},automaticLayout:true,tabSize:4,bracketPairColorization:{enabled:true},parameterHints:{enabled:true},suggestOnTriggerCharacters:true,semanticHighlighting:{enabled:true}});
+        }
+        // Create user editor
+        if(!userEditor){
+            userEditor=monaco.editor.create(document.getElementById('user-editor-container'),{value:'',language:'c',theme:'custom-dark',readOnly:false,fontSize:14,fontFamily:"'JetBrains Mono','Fira Code','Consolas',monospace",fontLigatures:true,lineNumbers:'on',minimap:{enabled:false},automaticLayout:true,tabSize:4,bracketPairColorization:{enabled:true},parameterHints:{enabled:true},suggestOnTriggerCharacters:true,semanticHighlighting:{enabled:true}});
+        }
+        document.getElementById('editor-loading').style.display='none';
+        document.getElementById('user-editor-container').style.display='block';
+    }catch(e){console.error('Monaco:',e);document.getElementById('editor-loading').innerHTML='<span style="color:var(--red)">编辑器加载失败，请刷新页面</span>';}
+}
+function setExampleCode(c){if(exampleEditor)exampleEditor.setValue(c||'');}
+function getUserCode(){return userEditor?userEditor.getValue():'';}
+function setUserCode(c){if(userEditor)userEditor.setValue(c||'');}
+
+// Monaco model reuse: cache models per exercise file path
+const modelCache={};
+function getModel(path,content){
+    const key=currentExercise?currentExercise.id+'_'+path:path;
+    if(modelCache[key]){modelCache[key].setValue(content||'');return modelCache[key];}
+    const model=monaco.editor.createModel(content||'', 'c');
+    modelCache[key]=model;return model;
+}
+function switchEditorFile(path,content){
+    if(!userEditor)return;
+    const model=getModel(path,content);
+    userEditor.setModel(model);
+}
+
+// ===================================================================
+// FIREBASE
+// ===================================================================
+try{if(firebaseConfig.apiKey!=='YOUR_API_KEY'){firebase.initializeApp(firebaseConfig);firebaseInitialized=true;}
+    else console.warn('Firebase not configured');}catch(e){console.warn('Firebase init:',e);}
+const db=firebaseInitialized?firebase.firestore():null;let authUnsub=null;
+const MAX_USERS=20;
+function switchAuthTab(t){['login','register'].forEach(x=>{const el=document.getElementById('tab-'+x);if(el)el.className='tab'+(x===t?' active':'')});document.getElementById('auth-login').style.display=t==='login'?'block':'none';document.getElementById('auth-register').style.display=t==='register'?'block':'none';document.getElementById('login-err').style.display='none';document.getElementById('reg-err').style.display='none';}
+async function handleLogin(){const e=document.getElementById('login-email').value.trim(),p=document.getElementById('login-pass').value.trim(),er=document.getElementById('login-err'),btn=document.getElementById('login-btn');if(!e||!p){er.textContent='请输入邮箱和密码';er.style.display='block';return;}btn.disabled=true;btn.textContent='登录中...';try{if(firebaseInitialized)await firebase.auth().signInWithEmailAndPassword(e,p);else{const s=localStorage.getItem('local_user_'+e);if(!s)throw new Error('用户不存在');const d=JSON.parse(s);if(d.password!==p)throw new Error('密码错误');currentUser={email:e,uid:e};initApp();}}catch(err){er.textContent=err.message;er.style.display='block';}btn.disabled=false;btn.textContent='登 录';}
+async function getUserCount(){if(!firebaseInitialized||!db)return 0;try{const snap=await db.collection('users').get();return snap.size;}catch(e){console.warn('getUserCount error:',e);return 0;}}
+async function updateUserCountBadge(){if(firebaseInitialized){const c=await getUserCount();const el=document.getElementById('user-count-badge');if(el)el.textContent='👥 '+c+'/'+MAX_USERS;}}
+async function handleRegister(){const e=document.getElementById('reg-email').value.trim(),p=document.getElementById('reg-pass').value.trim(),c=document.getElementById('reg-confirm').value.trim(),er=document.getElementById('reg-err'),btn=document.getElementById('reg-btn');if(!e||!p){er.textContent='请填写邮箱和密码';er.style.display='block';return;}if(p.length<6){er.textContent='密码至少6位';er.style.display='block';return;}if(p!==c){er.textContent='两次密码不一致';er.style.display='block';return;}btn.disabled=true;btn.textContent='注册中...';try{if(firebaseInitialized){const count=await getUserCount();if(count>=MAX_USERS){er.textContent='注册名额已满（上限'+MAX_USERS+'人）';er.style.display='block';btn.disabled=false;btn.textContent='注 册';return;}const cred=await firebase.auth().createUserWithEmailAndPassword(e,p);await db.collection('users').doc(cred.user.uid).set({email:e,progress:{},createdAt:firebase.firestore.FieldValue.serverTimestamp()});currentUser={email:e,uid:cred.user.uid};localStorage.setItem('workbuddy_user',JSON.stringify(currentUser));initApp();}else{if(localStorage.getItem('local_user_'+e))throw new Error('已注册');localStorage.setItem('local_user_'+e,JSON.stringify({email:e,password:p}));currentUser={email:e,uid:e};localStorage.setItem('workbuddy_user',JSON.stringify(currentUser));initApp();}}catch(err){er.textContent=err.message;er.style.display='block';}btn.disabled=false;btn.textContent='注 册';}
+function handleLogout(){if(authUnsub){authUnsub();authUnsub=null;}if(firebaseInitialized)firebase.auth().signOut();localStorage.removeItem('workbuddy_user');currentUser=null;currentExercise=null;document.getElementById('app').classList.remove('active');document.getElementById('login-overlay').style.display='flex';}
+if(firebaseInitialized){authUnsub=firebase.auth().onAuthStateChanged(async user=>{try{if(user){if(document.getElementById('remember-me').checked)localStorage.setItem('workbuddy_user',JSON.stringify({email:user.email,uid:user.uid}));currentUser={email:user.email,uid:user.uid};progress={completedLevels:[]};try{const doc=await db.collection('users').doc(user.uid).get();if(doc.exists&&doc.data().progress){const fp=doc.data().progress;if(fp.completedLevels&&Array.isArray(fp.completedLevels))fp.completedLevels.forEach(id=>{if(!progress.completedLevels.includes(id))progress.completedLevels.push(id);});}}catch(e){}loadLocalProgress();initApp();}else if(localStorage.getItem('workbuddy_user')){currentUser=JSON.parse(localStorage.getItem('workbuddy_user'));progress={completedLevels:[]};loadLocalProgress();initApp();}}catch(e){showError('登录状态加载失败: '+e.message);}});}
+function loadLocalProgress(){if(!progress.completedLevels)progress.completedLevels=[];const k='wb_progress_'+(currentUser?currentUser.email||currentUser.uid:'default');const s=localStorage.getItem(k);if(s){try{const p=JSON.parse(s);if(p.completedLevels&&Array.isArray(p.completedLevels))p.completedLevels.forEach(id=>{if(!progress.completedLevels.includes(id))progress.completedLevels.push(id);});}catch(e){}}saveProgress();}
+function saveProgress(){if(!progress.completedLevels)progress.completedLevels=[];const k='wb_progress_'+(currentUser?currentUser.email||currentUser.uid:'default');localStorage.setItem(k,JSON.stringify(progress));if(firebaseInitialized&&currentUser&&currentUser.uid)db.collection('users').doc(currentUser.uid).update({progress}).catch(()=>{});}
+function isUnlocked(id){return id===1||(progress.completedLevels||[]).includes(id-1);}
+function getLevelStatus(id){if(!isUnlocked(id))return'locked';if((progress.completedLevels||[]).includes(id))return'completed';if(currentExercise&&currentExercise.id===id)return'inprogress';return'unlocked';}
+function completeLevel(id){if(!progress.completedLevels.includes(id)){progress.completedLevels.push(id);saveProgress();renderChallengeList();updateStatusLabel('completed');showToast('✅','第'+id+'关已完成！'+(id<20?' 第'+(id+1)+'关已解锁。':' 🎉恭喜通关所有关卡！'));renderHomePage();}}
+function showError(msg){const ep=document.getElementById('error-page');document.getElementById('err-text').textContent=msg;ep.style.display='flex';document.getElementById('login-overlay').style.display='none';document.getElementById('app').classList.remove('active');}
+function retryInit(){initError=null;document.getElementById('error-page').style.display='none';initApp();}
+
+// ===================================================================
+// ROUTING
+// ===================================================================
+let currentCategoryId=null;
+function getHash(){return window.location.hash||'#home';}
+function navigate(hash){window.location.hash=hash;handleRoute();}
+function handleRoute(){
+    const hash=getHash();
+    if(hash==='#home'||!hash.startsWith('#category='))showHome();
+    else showCategory(hash.replace('#category=',''));
+}
+window.addEventListener('hashchange',handleRoute);
+
+function showHome(){
+    document.getElementById('home-page').classList.add('show');document.getElementById('level-page').classList.remove('show');document.getElementById('back-btn').classList.remove('show');
+    currentCategoryId=null;renderHomePage();
+}
+function showCategory(catId){
+    // Animate transition
+    const hp=document.getElementById('home-page');
+    if(hp.classList.contains('show')){hp.classList.add('anim-card-exit');setTimeout(()=>{hp.classList.remove('show','anim-card-exit');document.getElementById('level-page').classList.add('show');document.getElementById('back-btn').classList.add('show');},250);}
+    else{document.getElementById('level-page').classList.add('show');document.getElementById('back-btn').classList.add('show');}
+    currentCategoryId=catId;const cat=categories.find(c=>c.id===catId);
+    if(cat){document.getElementById('sidebar-cat-name').textContent=cat.name;document.getElementById('sidebar-cat-count').textContent=cat.count+'题';}
+    // Reset content area with animation
+    const mc=document.getElementById('main-content');mc.classList.remove('anim-slide');void mc.offsetWidth;mc.classList.add('anim-slide');
+    renderChallengeList();practiceData.forEach(ex=>{const s=localStorage.getItem('tab_state_'+ex.id);if(s)tabState[ex.id]={activeTab:s};});
+    const fu=practiceData.find(e=>isUnlocked(e.id));if(fu)selectExercise(fu.id);
+}
+function goHome(){showToast('','',0);navigate('#home');}
+
+// ===================================================================
+// HOME PAGE
+// ===================================================================
+function renderHomePage(){
+    const grid=document.getElementById('cat-grid');grid.innerHTML='';
+    // Update user count badge
+    updateUserCountBadge();
+    // Show user count on home page
+    const ucEl=document.getElementById('home-user-count');
+    if(ucEl&&firebaseInitialized){getUserCount().then(c=>{ucEl.textContent='👥 当前注册人数：'+c+'/'+MAX_USERS+(currentUser?'  |  已登录：'+currentUser.email:'');});}else if(ucEl){ucEl.textContent='';}
+    categories.forEach(cat=>{
+        const total=cat.count;const comp=(progress.completedLevels||[]).length;
+        const pct=total>0?Math.round(comp/total*100):0;
+        const card=document.createElement('div');card.className='cat-card';
+        card.innerHTML='<div class="cat-icon">'+cat.icon+'</div><div class="cat-name">'+cat.name+'</div><div class="cat-desc">'+cat.description+'</div><div class="cat-progress">'+
+            (comp===0?'<span style="color:#888">✨ 开始你的第一道练习吧！</span>':'<span>'+comp+'/'+total+' 题完成</span><div class="cat-progress-bar"><div class="fill" style="width:'+pct+'%"></div></div><span>'+pct+'%</span>')+
+            '</div>';
+        card.onclick=function(){this.style.transform='scale(0.98)';setTimeout(()=>navigate('#category='+cat.id),150);};
+        grid.appendChild(card);
+    });
+}
+
+// ===================================================================
+// RENDER CHALLENGE LIST
+// ===================================================================
+function renderChallengeList(){
+    const c=document.getElementById('challenge-list');c.innerHTML='';
+    const g={};practiceData.forEach(e=>{if(!g[e.category])g[e.category]=[];g[e.category].push(e);});
+    let avail=0,comp=0;practiceData.forEach(e=>{const s=getLevelStatus(e.id);if(s==='unlocked'||s==='inprogress')avail++;if(s==='completed')comp++;});
+    document.getElementById('stat-available').textContent=avail;document.getElementById('stat-completed').textContent=comp;
+    LEVEL_ORDER.forEach(lv=>{if(!g[lv])return;
+        const gr=document.createElement('div');gr.className='level-group';
+        const hd=document.createElement('div');hd.className='level-header';
+        hd.innerHTML='<span>'+lv+'（'+g[lv].length+'关）<span style="color:#555;font-size:10px;margin-left:4px">[可访问 '+g[lv].filter(e=>isUnlocked(e.id)).length+']</span></span><span class="arrow">▼</span>';
+        hd.onclick=function(){hd.nextElementSibling.classList.toggle('collapsed');hd.querySelector('.arrow').classList.toggle('collapsed');};
+        const bd=document.createElement('div');bd.className='level-body';
+        g[lv].forEach(ex=>{const st=getLevelStatus(ex.id),locked=st==='locked',act=currentExercise&&currentExercise.id===ex.id;
+            const it=document.createElement('div');it.className='challenge-item'+(act?' active':'')+(locked?' locked':'');it.dataset.id=ex.id;
+            const dc=locked?'locked-dot':st==='completed'?'completed-dot':st==='inprogress'?'inprogress-dot':'unlocked-dot';
+            it.innerHTML='<span class="num">'+(locked?'🔒':'#'+String(ex.id).padStart(2,'0'))+'</span><span class="name">'+ex.title+'</span><span class="sdot2 '+dc+'"></span>';
+            if(locked)it.onclick=function(){showToast('🔒','请先完成第'+(ex.id-1)+'关');};
+            else it.onclick=function(){selectExercise(ex.id);};
+            bd.appendChild(it);});
+        gr.appendChild(hd);gr.appendChild(bd);c.appendChild(gr);
+    });
+}
+
+// ===================================================================
+// SELECT EXERCISE
+// ===================================================================
+function selectExercise(id){
+    const ex=practiceData.find(e=>e.id===id);if(!ex)return;if(!isUnlocked(id)){showToast('🔒','未解锁');return;}
+    currentExercise=ex;
+    document.querySelectorAll('.challenge-item').forEach(el=>el.classList.toggle('active',parseInt(el.dataset.id)===id));
+    document.getElementById('detail-title').textContent='#'+String(id).padStart(2,'0')+' '+ex.title;
+    document.getElementById('detail-lvl').textContent=ex.category;
+    document.getElementById('tab-bar').style.display='flex';document.getElementById('action-bar').style.display='flex';
+    document.getElementById('detail-goal').innerHTML='<p>'+ex.goal+'</p>';
+    document.getElementById('detail-req').innerHTML='<ul>'+ex.requirements.map(r=>'<li>'+r+'</li>').join('')+'</ul>';
+    document.getElementById('detail-hints').innerHTML='<ul>'+ex.hints.map(h=>'<li>'+h+'</li>').join('')+'</ul>';
+    if(Array.isArray(ex.testMethod))document.getElementById('detail-test').innerHTML='<ul>'+ex.testMethod.map(t=>'<li>'+t+'</li>').join('')+'</ul>';
+    else document.getElementById('detail-test').innerHTML='<p>'+ex.testMethod+'</p>';
+    setExampleCode(ex.exampleCode||'');
+    renderFileTree();
+    const af=tabState[ex.id]?.activeFile||ex.activeFile||'';
+    const content=getFileContent((ex.files||[]),af);
+    // Use model reuse
+    if(userEditor)switchEditorFile(af,content);
+    else setUserCode(content);
+    const ts=tabState[id];switchTab(ts?.activeTab||'detail');
+    updateStatusLabel(getLevelStatus(id));
+    // Animate content area
+    const mc=document.getElementById('main-content');mc.classList.remove('anim-slide');void mc.offsetWidth;mc.classList.add('anim-slide');
+}
+function updateStatusLabel(st){const m={'unlocked':{t:'⚪ 未开始',c:'var(--red)'},'inprogress':{t:'🟡 进行中',c:'var(--orange)'},'completed':{t:'🟢 已完成',c:'var(--green)'}};const i=m[st]||{t:'—',c:'#888'};const l=document.getElementById('status-label');l.textContent=i.t;l.style.color=i.c;}
+
+// ===================================================================
+// TABS
+// ===================================================================
+function switchTab(tab){
+    if(!currentExercise)return;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+    ['detail','example','code'].forEach(t=>{const el=document.getElementById('tab-'+t);if(el)el.classList.toggle('active',t===tab);});
+    if(!tabState[currentExercise.id])tabState[currentExercise.id]={};
+    tabState[currentExercise.id].activeTab=tab;localStorage.setItem('tab_state_'+currentExercise.id,tab);
+    setTimeout(()=>{if(userEditor)userEditor.layout();},100);
+}
+
+// ===================================================================
+// FILE TREE
+// ===================================================================
+function getActiveFiles(){return currentExercise?.files||[];}
+function getFileContent(fs,path){for(const f of fs){if(f.type==='folder'&&f.children){const r=getFileContent(f.children,path);if(r!==undefined)return r;}const fp=getFilePath(f.name);if(fp===path)return f.content;}return undefined;}
+function setFileContent(fs,path,c){for(const f of fs){if(f.type==='folder'&&f.children){if(setFileContent(f.children,path,c))return true;}if(getFilePath(f.name)===path){f.content=c;return true;}}return false;}
+function getFilePath(name){if(!currentExercise)return name;let p='';function w(fs,pre){for(const f of fs){const cp=pre?pre+'/'+f.name:f.name;if(f.type==='folder'&&f.children)w(f.children,cp);else if(f.name===name)p=cp;}}w(currentExercise.files||[],'');return p||name;}
+function getFolderKey(path){return(currentExercise?currentExercise.id:'0')+'_'+path;}
+function cloneFiles(fs){return fs.map(f=>f.type==='folder'?{...f,children:f.children?cloneFiles(f.children):[]}:{...f});}
+
+function renderFileTree(){
+    const body=document.getElementById('file-tree-body');body.innerHTML='';
+    const files=getActiveFiles();if(!files.length){body.innerHTML='<div style="padding:12px;color:#555">无文件</div>';return;}
+    document.getElementById('ft-title').textContent=currentExercise?currentExercise.title:'文件';
+    const activePath=tabState[currentExercise?.id]?.activeFile||currentExercise?.activeFile||'';
+    function renderNode(fs,depth,parentPrefix){
+        for(const f of fs){
+            const cp=parentPrefix?parentPrefix+'/'+f.name:f.name;
+            const div=document.createElement('div');div.className='ft-item'+(cp===activePath?' active':'');
+            div.style.paddingLeft=(12+depth*16)+'px';div.dataset.path=cp;div.dataset.type=f.type;
+            if(f.type==='folder'){
+                const key=getFolderKey(cp);
+                if(folderOpenState[key]===undefined)folderOpenState[key]=false;
+                const open=folderOpenState[key];
+                div.innerHTML='<span class="ft-arrow'+(open?' rotated':'')+'">▶</span><span class="ft-icon">'+(open?'📂':'📁')+'</span><span class="ft-name">'+f.name+'</span>';
+                const arrow=div.querySelector('.ft-arrow');
+                arrow.onclick=function(e){e.stopPropagation();folderOpenState[key]=!folderOpenState[key];renderFileTree();};
+                div.onclick=function(e){if(e.target===arrow)return;folderOpenState[key]=!folderOpenState[key];renderFileTree();};
+                div.oncontextmenu=function(e){e.preventDefault();ctxTargetPath=cp;ctxTargetPathType='folder';showCtxMenu(e);};
+                body.appendChild(div);
+                if(open&&f.children){
+                    const childWrap=document.createElement('div');childWrap.className='ft-children';
+                    childWrap.style.maxHeight=open?'2000px':'0';
+                    body.appendChild(childWrap);
+                    // Recursive with hidden children for animation
+                    const innerBody=document.createElement('div');
+                    renderNode(f.children,depth+1,cp);
+                }
+            }else{
+                div.innerHTML='<span class="ft-arrow" style="visibility:hidden">▶</span><span class="ft-icon">📄</span><span class="ft-name">'+f.name+'</span>';
+                div.onclick=function(){selectFile(cp);};
+                div.oncontextmenu=function(e){e.preventDefault();ctxTargetPath=cp;ctxTargetPathType='file';showCtxMenu(e);};
+                body.appendChild(div);
+            }
+        }
+    }
+    renderNode(files,0,'');
+}
+function selectFile(path){
+    if(!currentExercise)return;if(!tabState[currentExercise.id])tabState[currentExercise.id]={};
+    tabState[currentExercise.id].activeFile=path;renderFileTree();
+    const content=getFileContent(getActiveFiles(),path);
+    if(userEditor)switchEditorFile(path,content);else if(content!==undefined)setUserCode(content);
+}
+function showCtxMenu(e){
+    const m=document.getElementById('ctx-menu');
+    m.style.left=Math.min(e.clientX,window.innerWidth-160)+'px';m.style.top=e.clientY+'px';m.style.display='block';
+    setTimeout(()=>document.addEventListener('click',function(){m.style.display='none';},{once:true}),10);
+}
+function ctxAction(action){
+    document.getElementById('ctx-menu').style.display='none';
+    if(!currentExercise||!ctxTargetPath)return;
+    const files=getActiveFiles();const parts=ctxTargetPath.split('/');const fileName=parts.pop();const parentPath=parts.join('/');
+    const isFolder=ctxTargetPathType==='folder';
+    function findParent(fs,ppath){
+        if(!ppath)return fs;
+        for(const f of fs){if(f.type==='folder'){const fp=getFilePath(f.name);if(fp===ppath)return f.children;if(f.children){const r=findParent(f.children,ppath);if(r)return r;}}}
+        return null;
+    }
+    let parent=isFolder?findParent(files,ctxTargetPath):findParent(files,parentPath);
+    if(!parent)parent=files;
+    if(action==='new-file'||action==='new-folder'){
+        const name=prompt('输入'+(action==='new-file'?'文件':'文件夹')+'名:');if(!name)return;
+        if(action==='new-file')parent.push({name,type:'file',content:''});
+        else parent.push({name,type:'folder',children:[]});
+        renderFileTree();
+        if(action==='new-file'){const np=isFolder?ctxTargetPath+'/'+name:(parentPath?parentPath+'/'+name:name);selectFile(np);}
+    }else if(action==='rename'){
+        const newName=prompt('新名称:',fileName);if(!newName)return;
+        for(const f of parent){if(f.name===fileName){f.name=newName;break;}}
+        renderFileTree();
+    }else if(action==='delete'){
+        if(!confirm('确定删除 "'+fileName+'" 吗？'))return;
+        const idx=parent.findIndex(f=>f.name===fileName);if(idx>=0){parent.splice(idx,1);renderFileTree();
+            const active=tabState[currentExercise.id]?.activeFile||'';
+            if(active===ctxTargetPath&&parent.length>0){
+                const first=parent[0];const fp=first.type==='folder'?(first.children?first.children[0]?.name:''):first.name;
+                if(fp)selectFile(parentPath?parentPath+'/'+fp:fp);
+            }
+        }
+    }
+}
+function toggleFileTree(){
+    fileTreeCollapsed=!fileTreeCollapsed;
+    const panel=document.getElementById('file-tree-panel');
+    panel.style.width=fileTreeCollapsed?'40px':'220px';panel.style.minWidth=fileTreeCollapsed?'40px':'220px';
+    panel.querySelector('.collapse-btn').textContent=fileTreeCollapsed?'▶ 展开':'◀ 收起';
+    panel.querySelector('.file-tree-body').style.display=fileTreeCollapsed?'none':'';
+    document.getElementById('resize-handle').style.display=fileTreeCollapsed?'none':'block';
+    setTimeout(()=>{if(userEditor)userEditor.layout();},100);
+}
+(function(){const handle=document.getElementById('resize-handle');let dragging=false;
+    handle.addEventListener('mousedown',function(){dragging=true;handle.classList.add('active');document.body.style.cursor='col-resize';document.body.style.userSelect='none';});
+    document.addEventListener('mousemove',function(e){if(!dragging)return;const rect=document.getElementById('editor-tab-body').getBoundingClientRect();let x=e.clientX-rect.left;const panel=document.getElementById('file-tree-panel');const mw=80;if(x<mw)x=mw;if(x>rect.width-100)x=rect.width-100;panel.style.width=x+'px';panel.style.minWidth='0';panel.style.flex='none';if(userEditor)userEditor.layout();});
+    document.addEventListener('mouseup',function(){if(dragging){dragging=false;handle.classList.remove('active');document.body.style.cursor='';document.body.style.userSelect='';}});})();
+
+// ===================================================================
+// MARK COMPLETE / RUN / SAVE / UPLOAD
+// ===================================================================
+function markComplete(){if(!currentExercise)return;if(!isUnlocked(currentExercise.id)){showToast('🔒','未解锁');return;}
+    if((progress.completedLevels||[]).includes(currentExercise.id)){showToast('ℹ️','已完成');return;}
+    const af=tabState[currentExercise.id]?.activeFile||currentExercise?.activeFile||'';
+    const code=getUserCode();if(af&&code)setFileContent(getActiveFiles(),af,code);
+    completeLevel(currentExercise.id);}
+async function runCode(){
+    if(!currentExercise){showToast('⚠️','请选择题目');return;}const code=getUserCode();if(!code.trim()){showToast('⚠️','代码为空');return;}
+    if(/^\s*#\s*include\s*[<"]stm32/i.test(code)){showToast('⚠️','含硬件代码，请本地编译');terminalPrint('⚠️ 硬件代码需本地编译','info');return;}
+    const btn=document.getElementById('run-btn');const orig=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> 运行中...';
+    const term=document.getElementById('terminal-wrap');term.classList.add('open');terminalPrint('▶ 编译运行...\n','info');
+    try{const res=await fetch('https://wandbox.org/api/compile.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({compiler:'gcc-head',code,options:'-Wall -std=c11'})});
+        const data=await res.json();if(data.status==='0'){if(data.program_output)terminalPrint(data.program_output,'ok');else if(data.compiler_error)terminalPrint(data.compiler_error,'err');else terminalPrint('✅ 编译成功','ok');}
+        else{terminalPrint('状态:'+data.status+'\n','err');if(data.compiler_error)terminalPrint(data.compiler_error,'err');if(data.program_output)terminalPrint(data.program_output,'ok');}
+    }catch(e){terminalPrint('❌ '+e.message,'err');}finally{btn.disabled=false;btn.innerHTML=orig;}
+}
+function terminalPrint(t,c){const o=document.getElementById('terminal-out');o.innerHTML+='<div class="'+(c||'')+'">'+t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>').replace(/ /g,'&nbsp;')+'</div>';o.scrollTop=o.scrollHeight;}
+function clearTerminal(){document.getElementById('terminal-out').innerHTML='';}
+function hideTerminal(){document.getElementById('terminal-wrap').classList.remove('open');}
+async function saveToLocal(){
+    if(!currentExercise||!currentExercise.files){showToast('⚠️','无文件');return;}
+    const files=currentExercise.files;
+    if(window.showDirectoryPicker){try{const dh=await window.showDirectoryPicker({mode:'readwrite'});let cnt=0;
+        async function wf(fs,parent){for(const f of fs){if(f.type==='folder'){const sub=await parent.getDirectoryHandle(f.name,{create:true});if(f.children)await wf(f.children,sub);}else{const fh=await parent.getFileHandle(f.name,{create:true});const w=await fh.createWritable();await w.write(f.content||'');await w.close();cnt++;}}}
+        await wf(files,dh);showToast('✅','保存成功！共'+cnt+'个文件');}catch(e){if(e.name!=='AbortError')fallbackZip(files);}}else fallbackZip(files);
+}
+function fallbackZip(files){if(typeof JSZip==='undefined'){showToast('⚠️','浏览器不支持');return;}
+    const zip=new JSZip();function add(fs,p){for(const f of fs){if(f.type==='folder'){const s=p.folder(f.name);if(f.children)add(f.children,s);}else p.file(f.name,f.content||'');}}
+    add(files,zip);zip.generateAsync({type:'blob'}).then(function(blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='level'+String(currentExercise.id).padStart(2,'0')+'.zip';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);showToast('✅','ZIP 下载成功');});}
+function openUploadModal(){if(!currentExercise){showToast('⚠️','请选择题目');return;}
+    document.getElementById('gh-path').value='level'+String(currentExercise.id).padStart(2,'0')+'/main.c';document.getElementById('gh-msg').value='Add level '+String(currentExercise.id).padStart(2,'0');
+    const u=currentUser?currentUser.email||currentUser.uid:'';if(localStorage.getItem('gh_token_'+u))document.getElementById('gh-token').value=localStorage.getItem('gh_token_'+u);
+    if(localStorage.getItem('gh_repo_'+u))document.getElementById('gh-repo').value=localStorage.getItem('gh_repo_'+u);if(localStorage.getItem('gh_branch_'+u))document.getElementById('gh-branch').value=localStorage.getItem('gh_branch_'+u);else document.getElementById('gh-branch').value='main';
+    document.getElementById('upload-status').className='upload-msg';document.getElementById('upload-status').textContent='';document.getElementById('upload-modal').classList.add('active');}
+function closeUploadModal(){document.getElementById('upload-modal').classList.remove('active');}
+document.getElementById('upload-modal').addEventListener('click',e=>{if(e.target===document.getElementById('upload-modal'))closeUploadModal();});
+async function uploadToGitHub(){const t=document.getElementById('gh-token').value.trim(),r=document.getElementById('gh-repo').value.trim(),b=document.getElementById('gh-branch').value.trim()||'main',p=document.getElementById('gh-path').value.trim(),m=document.getElementById('gh-msg').value.trim()||'Update',st=document.getElementById('upload-status');
+    if(!t||!r||!p){st.className='upload-msg error';st.textContent='请填写完整';return;}if(!r.includes('/')){st.className='upload-msg error';st.textContent='格式 owner/repo';return;}
+    const u=currentUser?currentUser.email||currentUser.uid:'';localStorage.setItem('gh_token_'+u,t);localStorage.setItem('gh_repo_'+u,r);localStorage.setItem('gh_branch_'+u,b);
+    const c=getUserCode();if(!c.trim()){st.className='upload-msg error';st.textContent='代码为空';return;}
+    st.className='upload-msg';st.textContent='⏳ 上传中...';
+    try{const content=btoa(unescape(encodeURIComponent(c)));const res=await fetch('https://api.github.com/repos/'+r+'/contents/'+p,{method:'PUT',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},body:JSON.stringify({message:m,content,branch:b})});const data=await res.json();if(res.ok){st.className='upload-msg success';st.textContent='✅ 成功';showToast('✅','上传成功');if(currentExercise&&!progress.completedLevels.includes(currentExercise.id))completeLevel(currentExercise.id);}else{st.className='upload-msg error';st.textContent='❌ '+(data.message||res.statusText);}}catch(e){st.className='upload-msg error';st.textContent='❌ '+e.message;}}
+document.addEventListener('keydown',e=>{if(!currentExercise)return;const ids=practiceData.map(x=>x.id);const idx=ids.indexOf(currentExercise.id);if(e.key==='ArrowUp'){e.preventDefault();for(let i=idx-1;i>=0;i--){if(isUnlocked(ids[i])){selectExercise(ids[i]);break;}}}if(e.key==='ArrowDown'){e.preventDefault();for(let i=idx+1;i<ids.length;i++){if(isUnlocked(ids[i])){selectExercise(ids[i]);break;}}}if(e.key==='F5'){e.preventDefault();runCode();}});
+
+// ===================================================================
+// SHARE LINK
+// ===================================================================
+function shareLink(){
+    const url=window.location.href;
+    if(navigator.clipboard){
+        navigator.clipboard.writeText(url).then(()=>{
+            showToast('🔗','链接已复制到剪贴板！');
+        }).catch(()=>{
+            fallbackCopy(url);
+        });
+    }else{
+        fallbackCopy(url);
+    }
+}
+function fallbackCopy(text){
+    const ta=document.createElement('textarea');
+    ta.value=text;ta.style.position='fixed';ta.style.left='-9999px';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');showToast('🔗','链接已复制到剪贴板！');}
+    catch(e){showToast('⚠️','复制失败，请手动复制地址栏链接');}
+    document.body.removeChild(ta);
+}
+
+// ===================================================================
+// 硬编码示例代码注入（解决 file:// 协议下示例代码为空的问题）
+// ===================================================================
+document.addEventListener('DOMContentLoaded', function() {
+    // 第一题（#01 GPIO）的完整示例代码
+    var firstQuestionCode = '/* gpio_t 结构体 + 按键消抖状态机 */\n' +
+'\n' +
+'#include "stdint.h"\n' +
+'#include "stdio.h"\n' +
+'\n' +
+'// 简单的 GPIO 模拟结构体\n' +
+'\n' +
+'typedef struct {\n' +
+'    uint8_t pin_state;\n' +
+'    uint8_t direction;\n' +
+'} gpio_t;\n' +
+'\n' +
+'// 按键消抖状态机状态定义\n' +
+'\n' +
+'typedef enum {\n' +
+'    KEY_IDLE = 0,\n' +
+'    KEY_PRESSED_DEBOUNCE,\n' +
+'    KEY_RELEASED_DEBOUNCE\n' +
+'} key_state_t;\n' +
+'\n' +
+'// 简单的延时函数模拟\n' +
+'\n' +
+'void delay_ms(uint32_t ms) {\n' +
+'    // 在真实嵌入式环境中，这里会是定时器操作\n' +
+'    for(volatile uint32_t i = 0; i < ms * 1000; i++);\n' +
+'}\n' +
+'\n' +
+'int main() {\n' +
+'    gpio_t my_button = {0};\n' +
+'    key_state_t current_state = KEY_IDLE;\n' +
+'\n' +
+'    printf("System Initialized.\\n");\n' +
+'\n' +
+'    while(1) {\n' +
+'        my_button.pin_state = read_hardware_pin();\n' +
+'\n' +
+'        switch(current_state) {\n' +
+'            case KEY_IDLE:\n' +
+'                if(my_button.pin_state == 0) {\n' +
+'                    current_state = KEY_PRESSED_DEBOUNCE;\n' +
+'                }\n' +
+'                break;\n' +
+'\n' +
+'            case KEY_PRESSED_DEBOUNCE:\n' +
+'                delay_ms(20);\n' +
+'                if(my_button.pin_state == 0) {\n' +
+'                    printf("Key Pressed and Debounced!\\n");\n' +
+'                    current_state = KEY_RELEASED_DEBOUNCE;\n' +
+'                } else {\n' +
+'                    current_state = KEY_IDLE;\n' +
+'                }\n' +
+'                break;\n' +
+'\n' +
+'            case KEY_RELEASED_DEBOUNCE:\n' +
+'                delay_ms(20);\n' +
+'                if(my_button.pin_state == 1) {\n' +
+'                    current_state = KEY_IDLE;\n' +
+'                }\n' +
+'                break;\n' +
+'        }\n' +
+'    }\n' +
+'    return 0;\n' +
+'}\n';
+    // 注入示例代码到 pre/code 元素
+    var el = document.getElementById('example-code-content');
+    if (el) {
+        el.textContent = firstQuestionCode;
+        console.log("Successfully injected hardcoded sample code into example-code-content.");
+    } else {
+        console.error("example-code-content element not found.");
+    }
+});
+
+// ===================================================================
+// INIT
+// ===================================================================
+document.addEventListener('DOMContentLoaded',()=>{
+    if(!firebaseInitialized){const s=localStorage.getItem('workbuddy_user');if(s){try{currentUser=JSON.parse(s);loadLocalProgress();initApp();return;}catch(e){}}}
+});
+async function initApp(){
+    document.getElementById('login-overlay').style.display='none';document.getElementById('app').classList.add('active');
+    document.getElementById('top-email').textContent=currentUser.email||'';
+    updateUserCountBadge();
+    try{await initEditors();handleRoute();}catch(e){showError('初始化失败: '+e.message);}
+}
+</script>
+</body></html>
