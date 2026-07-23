@@ -723,7 +723,7 @@ function toggleFileTree(){
 // MARK COMPLETE / RUN / SAVE / UPLOAD
 // ===================================================================
 function markComplete(){if(!currentExercise)return;if(!isUnlocked(currentExercise.id)){showToast('🔒','未解锁');return;}
-    if((progress.completedLevels||[]).includes(currentExercise.id)){showToast('ℹ️','已完成');return;}
+    if((currentProgress.completedLevels||[]).includes(currentExercise.id)){showToast('ℹ️','已完成');return;}
     const af=tabState[currentExercise.id]?.activeFile||currentExercise?.activeFile||'';
     const code=getUserCode();if(af&&code)setFileContent(getActiveFiles(),af,code);
     completeLevel(currentExercise.id);}
@@ -762,7 +762,7 @@ async function uploadToGitHub(){const t=document.getElementById('gh-token').valu
     const u=currentUser?currentUser.email||currentUser.uid:'';localStorage.setItem('gh_token_'+u,t);localStorage.setItem('gh_repo_'+u,r);localStorage.setItem('gh_branch_'+u,b);
     const c=getUserCode();if(!c.trim()){st.className='upload-msg error';st.textContent='代码为空';return;}
     st.className='upload-msg';st.textContent='⏳ 上传中...';
-    try{const content=btoa(unescape(encodeURIComponent(c)));const res=await fetch('https://api.github.com/repos/'+r+'/contents/'+p,{method:'PUT',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},body:JSON.stringify({message:m,content,branch:b})});const data=await res.json();if(res.ok){st.className='upload-msg success';st.textContent='✅ 成功';showToast('✅','上传成功');if(currentExercise&&!progress.completedLevels.includes(currentExercise.id))completeLevel(currentExercise.id);}else{st.className='upload-msg error';st.textContent='❌ '+(data.message||res.statusText);}}catch(e){st.className='upload-msg error';st.textContent='❌ '+e.message;}}
+    try{const content=btoa(unescape(encodeURIComponent(c)));const res=await fetch('https://api.github.com/repos/'+r+'/contents/'+p,{method:'PUT',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},body:JSON.stringify({message:m,content,branch:b})});const data=await res.json();if(res.ok){st.className='upload-msg success';st.textContent='✅ 成功';showToast('✅','上传成功');if(currentExercise&&!currentProgress.completedLevels.includes(currentExercise.id))completeLevel(currentExercise.id);}else{st.className='upload-msg error';st.textContent='❌ '+(data.message||res.statusText);}}catch(e){st.className='upload-msg error';st.textContent='❌ '+e.message;}}
 document.addEventListener('keydown',e=>{if(!currentExercise)return;const ids=practiceData.map(x=>x.id);const idx=ids.indexOf(currentExercise.id);if(e.key==='ArrowUp'){e.preventDefault();for(let i=idx-1;i>=0;i--){if(isUnlocked(ids[i])){selectExercise(ids[i]);break;}}}if(e.key==='ArrowDown'){e.preventDefault();for(let i=idx+1;i<ids.length;i++){if(isUnlocked(ids[i])){selectExercise(ids[i]);break;}}}if(e.key==='F5'){e.preventDefault();runCode();}});
 
 // ===================================================================
