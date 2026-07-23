@@ -86,10 +86,10 @@ a{color:#3794ff;text-decoration:none}
 .sdot{width:8px;height:8px;border-radius:50%;display:inline-block}
 .sdot-red{background:var(--red)}.sdot-green{background:var(--green)}
 .level-group{margin-bottom:2px}
-.level-header{padding:6px 16px;font-size:11px;letter-spacing:1px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;transition:color 0.2s var(--ease)}
-.level-header:hover{color:#aaa}.level-header .arrow{font-size:10px;transition:transform 0.25s var(--ease)}
+.level-header{padding:8px 16px;font-size:11px;letter-spacing:1px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;transition:all 0.2s var(--ease);border-left:3px solid transparent;margin-top:4px}
+.level-header:hover{color:#ddd;background:#2a2d2e;border-left-color:var(--accent)}.level-header .arrow{font-size:10px;transition:transform 0.25s var(--ease);flex-shrink:0}
 .level-header .arrow.collapsed{transform:rotate(-90deg)}
-.level-body{overflow:hidden;transition:max-height 0.3s var(--ease)}
+.level-body{overflow:hidden;transition:max-height 0.35s var(--ease);max-height:2000px}
 .level-body.collapsed{max-height:0!important}
 .challenge-list{flex:1;overflow-y:auto;padding:4px 0}
 .challenge-item{display:flex;align-items:center;padding:9px 16px;cursor:pointer;border-left:3px solid transparent;transition:all 0.2s var(--ease)}
@@ -555,12 +555,12 @@ function renderChallengeList(){
     const g={};currentDataset.forEach(e=>{if(!g[e.category])g[e.category]=[];g[e.category].push(e);});
     let avail=0,comp=0;currentDataset.forEach(e=>{const s=getLevelStatus(e.id);if(s==='unlocked'||s==='inprogress')avail++;if(s==='completed')comp++;});
     document.getElementById('stat-available').textContent=avail;document.getElementById('stat-completed').textContent=comp;
-    LEVEL_ORDER.forEach(lv=>{if(!g[lv])return;
+    LEVEL_ORDER.forEach((lv,idx)=>{if(!g[lv])return;
         const gr=document.createElement('div');gr.className='level-group';
         const hd=document.createElement('div');hd.className='level-header';
-        hd.innerHTML='<span>'+lv+'（'+g[lv].length+'关）<span style="color:#555;font-size:10px;margin-left:4px">[可访问 '+g[lv].filter(e=>isUnlocked(e.id)).length+']</span></span><span class="arrow">▼</span>';
+        hd.innerHTML='<span>'+lv+'（'+g[lv].length+'关）<span style="color:#555;font-size:10px;margin-left:4px">[可访问 '+g[lv].filter(e=>isUnlocked(e.id)).length+']</span></span><span class="arrow'+(idx>0?' collapsed':'')+'">▼</span>';
         hd.onclick=function(){hd.nextElementSibling.classList.toggle('collapsed');hd.querySelector('.arrow').classList.toggle('collapsed');};
-        const bd=document.createElement('div');bd.className='level-body';
+        const bd=document.createElement('div');bd.className='level-body'+(idx>0?' collapsed':'');
         g[lv].forEach(ex=>{const st=getLevelStatus(ex.id),locked=st==='locked',act=currentExercise&&currentExercise.id===ex.id;
             const it=document.createElement('div');it.className='challenge-item'+(act?' active':'')+(locked?' locked':'');it.dataset.id=ex.id;
             const dc=locked?'locked-dot':st==='completed'?'completed-dot':st==='inprogress'?'inprogress-dot':'unlocked-dot';
