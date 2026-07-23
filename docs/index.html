@@ -694,8 +694,11 @@ setTimeout(function(){
     if(el)el.innerHTML='<span style="color:var(--orange)">⌛ 编辑器加载中，请确保网络连接...</span>';
   }
 },8000);
-require.config({paths:{vs:'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs'}});
-require(['vs/editor/editor.main'],function(){window.__monacoResolve();monacoLoaded=true;
+// Monaco 安全加载 (CDN 失败不影响登录/注册)
+try{
+    if(typeof require === 'function'){
+        require.config({paths:{vs:'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs'}});
+        require(['vs/editor/editor.main'],function(){window.__monacoResolve();monacoLoaded=true;
     monaco.editor.defineTheme('custom-dark',{base:'vs-dark',inherit:true,
         rules:[{token:'keyword',foreground:'569cd6'},{token:'type',foreground:'4ec9b0'},{token:'string',foreground:'ce9178'},{token:'comment',foreground:'6a9955',fontStyle:'italic'},{token:'number',foreground:'b5cea8'},{token:'function',foreground:'dcdcaa'},{token:'preprocessor',foreground:'c586c0'}],
         colors:{'editor.background':'#1e1e1e','editor.foreground':'#d4d4d4','editorCursor.foreground':'#aeafad','editor.selectionBackground':'#264f78','editorBracketMatch.background':'#0a0a0a','editorBracketMatch.border':'#888','editorBracketPairGuide.activeBackground1':'#ffd70033','editorBracketPairGuide.background1':'#ffd70011'}});
@@ -708,7 +711,9 @@ require(['vs/editor/editor.main'],function(){window.__monacoResolve();monacoLoad
             {label:'printf',kind:monaco.languages.CompletionItemKind.Snippet,insertText:'printf("$1",$2);',insertTextRules:monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet},
             {label:'HAL_GPIO_WritePin',kind:monaco.languages.CompletionItemKind.Function,insertText:'HAL_GPIO_WritePin($1,$2,$3);',insertTextRules:monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet},
             {label:'volatile',kind:monaco.languages.CompletionItemKind.Keyword,insertText:'volatile '}]};}});
-});
+        });  // close require callback + require()
+    }  // close if
+}catch(e){console.warn('Monaco CDN加载失败，编辑器不可用，登录/注册不受影响:',e);window.__monacoResolve&&window.__monacoResolve();}
 
 async function initEditors(){
     await monacoReady;
