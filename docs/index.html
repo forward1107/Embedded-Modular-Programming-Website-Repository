@@ -249,7 +249,7 @@ main{flex:1;overflow:hidden;display:flex;flex-direction:column}
 <div id="app">
 <header>
 <div class="topbar">
-<span class="logo" onclick="goHome()">⚡ 嵌入编程</span><span class="version-badge">v2.1</span>
+<span class="logo" onclick="goHome()">⚡ 嵌入编程</span><span class="version-badge">v3.0</span>
 <span class="back-btn" id="back-btn" onclick="goHome()">◀ 返回练习广场</span>
 <div class="top-right"><span class="email" id="top-email"></span><span id="user-count-badge" style="font-size:11px;color:#888;background:#2d2d2d;padding:2px 8px;border-radius:10px;border:1px solid #444"></span><button class="logout-btn" onclick="handleLogout()">退出</button></div>
 </div>
@@ -293,7 +293,7 @@ main{flex:1;overflow:hidden;display:flex;flex-direction:column}
 </div></div></div>
 </main>
 <footer style="text-align:center;padding:8px 16px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;font-size:11px;color:#555">
-<span>嵌入式模块化编程学习平台 v2.1</span>
+<span>嵌入式模块化编程学习平台 v3.0</span>
 </footer>
 
 <div class="modal-overlay" id="upload-modal"><div class="modal"><button class="modal-close" onclick="closeUploadModal()">&times;</button><h2>⬆ 上传到 GitHub</h2>
@@ -335,7 +335,7 @@ main{flex:1;overflow:hidden;display:flex;flex-direction:column}
 // CONFIG
 // ===================================================================
 const firebaseConfig = {apiKey:"YOUR_API_KEY",authDomain:"YOUR_PROJECT.firebaseapp.com",projectId:"YOUR_PROJECT_ID",storageBucket:"YOUR_PROJECT.appspot.com",messagingSenderId:"YOUR_SENDER_ID",appId:"YOUR_APP_ID"};
-const categories = [{id:"control",name:"嵌入式控制类",icon:"⚙️",description:"从GPIO封装到双轴运动控制，涵盖嵌入式工业自动化的核心技能",count:20}];
+const categories = [{id:"control",name:"嵌入式控制类",icon:"⚙️",description:"从GPIO封装到双轴运动控制，涵盖嵌入式工业自动化的核心技能",count:20},{id:"hal",name:"嵌入式底层端",icon:"🔧",description:"从GPIO到CAN，深入STM32 HAL库底层外设编程与初始化框架",count:19}];
 const LEVEL_ORDER = ['基础篇','进阶篇','工程师篇','综合项目'];
 
 // ===================================================================
@@ -364,12 +364,311 @@ const practiceData = [
   {id:20,category:"综合项目",title:"两轴运动控制与远程监控",goal:"整合所有模块的完整工业级控制平台。",requirements:["运动规划","单轴PID+编码器","电子齿轮","Modbus RTU","故障保护","调度器"],hints:["先搭骨架","实时性保障","故障≤1ms硬中断"],testMethod:["分辨率≤1μm","速度100mm/s","同步≤10μm","Modbus≤2ms","故障≤1ms"],exampleCode:"// 第20关",files:[{name:"Inc",type:"folder",children:[{name:"system.h",type:"file",content:"// system.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"scheduler.c",type:"file",content:"// scheduler.c"}]}],activeFile:"Src/main.c"}
 ];
 
+
+// ===================================================================
+// HAL DATA (19个底层外设模块)
+// ===================================================================
+const halData = [
+  // ===================== 基础篇 =====================
+  {id:1,category:"基础篇",title:"GPIO基础-HAL初始化与中断",goal:"掌握STM32 HAL库GPIO的完整初始化流程，包括引脚模式配置、上下拉设置、中断优先级。",requirements:["配置 GPIO_InitTypeDef 结构体","实现 HAL_GPIO_Init() 初始化","配置 EXTI 中断线和 NVIC","编写 HAL_GPIO_EXTI_Callback()"],hints:["GPIO_Mode 可选 INPUT/OUTPUT/AF/ANALOG/IT","GPIO_PuPd 上拉/下拉/浮空","EXTI 中断线号与引脚号对应"],testMethod:"用按键触发中断，通过串口打印引脚电平状态。",exampleCode:"/**\\n * @brief  GPIO HAL 初始化框架\\n * @note   标准 STM32CubeMX 生成风格，带中文注释\\n * @hardware STM32F407VG / STM32F103C8\\n */\\n\\n#include \\"main.h\\"\\n\\n// --- GPIO 句柄 ---\\nGPIO_InitTypeDef GPIO_InitStruct = {0};\\n\\n/**\\n * @brief  GPIO 初始化函数\\n * @note   配置 PA0 为推挽输出, PB1 为下拉输入+EXTI中断\\n */\\nvoid MX_GPIO_Init(void)\\n{\\n    /* 使能 GPIO 时钟 */\\n    __HAL_RCC_GPIOA_CLK_ENABLE();\\n    __HAL_RCC_GPIOB_CLK_ENABLE();\\n    __HAL_RCC_SYSCFG_CLK_ENABLE();\\n\\n    /* ==== PA0: 推挽输出, LED 控制 ==== */\\n    GPIO_InitStruct.Pin   = GPIO_PIN_0;\\n    GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;      // 推挽输出\\n    GPIO_InitStruct.Pull  = GPIO_NOPULL;               // 无上下拉\\n    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;       // 低速\\n    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);\\n\\n    /* ==== PB1: 下拉输入, 按键 + EXTI中断 ==== */\\n    GPIO_InitStruct.Pin   = GPIO_PIN_1;\\n    GPIO_InitStruct.Mode  = GPIO_MODE_IT_FALLING;      // 下降沿中断\\n    GPIO_InitStruct.Pull  = GPIO_PULLDOWN;              // 下拉\\n    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);\\n\\n    /* 配置 EXTI 中断优先级 */\\n    HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);\\n    HAL_NVIC_EnableIRQ(EXTI1_IRQn);\\n}\\n\\n/**\\n * @brief  GPIO 中断回调（用户重写）\\n */\\nvoid HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)\\n{\\n    if(GPIO_Pin == GPIO_PIN_1)\\n    {\\n        /* 翻转 PA0 LED */\\n        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);\\n    }\\n}\\n\\n/**\\n * @brief  测试函数：验证 GPIO 初始化与中断\\n */\\nvoid Test_GPIO_Init(void)\\n{\\n    MX_GPIO_Init();\\n    printf(\\"GPIO 初始化完成！按 PB1 切换 LED\\\\r\\\\n\\");\\n    while(1)\\n    {\\n        /* 主循环：等待中断发生 */\\n    }\\n}",files:[{name:"Inc",type:"folder",children:[{name:"gpio.h",type:"file",content:"// gpio.h - GPIO 初始化声明"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c - 主程序"},{name:"gpio.c",type:"file",content:"// gpio.c - GPIO 初始化实现"}]}],activeFile:"Src/gpio.c"},
+  {id:2,category:"基础篇",title:"RCC时钟树-SystemClock配置",goal:"掌握STM32 HAL库RCC时钟树配置流程，理解PLL倍频、AHB/APB分频关系。",requirements:["配置 RCC_OscInitTypeDef 振荡器","配置 RCC_ClkInitTypeDef 总线分频","输出系统时钟频率验证"],hints:["HSE 8MHz → PLL 倍频 168MHz (STM32F4)","APB1 ≤42MHz, APB2 ≤84MHz","HAL_RCC_GetHCLKFreq() 获取当前时钟"],testMethod:"串口打印 SYSCLK/HCLK/PCLK1/PCLK2 频率值。",exampleCode:"/**\\n * @brief  RCC 时钟树初始化框架\\n * @note   系统时钟 168MHz, HCLK=168MHz, APB1=42MHz, APB2=84MHz\\n */\\n\\n#include \\"main.h\\"\\n\\n/**\\n * @brief  系统时钟配置 (168MHz) 1. HSE 8MHz 2. PLL 倍频 21x → 168MHz\\n *          3. AHB 不分频, APB1 4分频, APB2 2分频\\n */\\nvoid SystemClock_Config(void)\\n{\\n    RCC_OscInitTypeDef RCC_OscInitStruct = {0};\\n    RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};\\n\\n    /* ==== 振荡器配置 ==== */\\n    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;\\n    RCC_OscInitStruct.HSEState       = RCC_HSE_ON;              // 开启 HSE\\n    RCC_OscInitStruct.PLL.PLLState   = RCC_PLL_ON;\\n    RCC_OscInitStruct.PLL.PLLSource  = RCC_PLLSOURCE_HSE;       // PLL 源=HSE\\n    RCC_OscInitStruct.PLL.PLLM       = 8;                       // 8分频\\n    RCC_OscInitStruct.PLL.PLLN       = 336;                     // 336倍频\\n    RCC_OscInitStruct.PLL.PLLP       = RCC_PLLP_DIV2;           // 2分频→SYSCLK\\n    RCC_OscInitStruct.PLL.PLLQ       = 7;\\n    HAL_RCC_OscConfig(&RCC_OscInitStruct);\\n\\n    /* ==== 总线分频配置 ==== */\\n    RCC_ClkInitStruct.ClockType      = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK\\n                                     | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;\\n    RCC_ClkInitStruct.SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK; // SYSCLK = PLL\\n    RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;         // HCLK = SYSCLK\\n    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;           // APB1 = 42MHz\\n    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;           // APB2 = 84MHz\\n    HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5);\\n}\\n\\n/**\\n * @brief  测试函数：打印系统时钟频率\\n */\\nvoid Test_RCC_Clock(void)\\n{\\n    SystemClock_Config();\\n    printf(\\"SYSCLK=%lu Hz\\\\r\\n\\", HAL_RCC_GetSysClockFreq());\\n    printf(\\"HCLK  =%lu Hz\\\\r\\n\\", HAL_RCC_GetHCLKFreq());\\n    printf(\\"PCLK1 =%lu Hz\\\\r\\n\\", HAL_RCC_GetPCLK1Freq());\\n    printf(\\"PCLK2 =%lu Hz\\\\r\\n\\", HAL_RCC_GetPCLK2Freq());\\n}",files:[{name:"Inc",type:"folder",children:[{name:"rcc.h",type:"file",content:"// rcc.h - 时钟配置声明"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"rcc.c",type:"file",content:"// rcc.c - 时钟配置实现"}]}],activeFile:"Src/rcc.c"},
+  {id:3,category:"基础篇",title:"TIM基本定时器-时基与中断",goal:"掌握HAL库定时器时基配置，实现精确的定时中断周期性回调。",requirements:["配置 TIM_HandleTypeDef 时基","计算 ARR/PSC 得到目标频率","HAL_TIM_Base_Start_IT 启动中断"],hints:["定时频率=定时器时钟/(PSC+1)/(ARR+1)","APB1 定时器时钟=42MHz(APB1*2)","PSC 16位最大65535,ARR 16/32位"],testMethod:"配置1ms定时中断，在回调中翻转LED，用示波器或逻辑分析仪验证。",exampleCode:"/**\\n * @brief  TIM 基本定时器初始化框架\\n * @note   产生 1ms 定时中断 (1000Hz)\\n */\\n\\n#include \\"main.h\\"\\n\\nTIM_HandleTypeDef htim2;  // 定时器句柄\\n\\n/**\\n * @brief  TIM2 初始化: 1ms 中断\\n * @note   定时器时钟=84MHz (APB1*2)  PSC=83→1MHz  ARR=999→1kHz\\n */\\nvoid MX_TIM2_Init(void)\\n{\\n    htim2.Instance               = TIM2;\\n    htim2.Init.Prescaler         = 84 - 1;           // PSC=83, 84MHz/84=1MHz\\n    htim2.Init.CounterMode       = TIM_COUNTERMODE_UP;\\n    htim2.Init.Period            = 1000 - 1;          // ARR=999, 1MHz/1000=1kHz\\n    htim2.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;\\n    htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;\\n    HAL_TIM_Base_Init(&htim2);\\n}\\n\\n/**\\n * @brief  TIM2 定时中断回调\\n */\\nvoid HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)\\n{\\n    if(htim->Instance == TIM2)\\n    {\\n        /* 每 1ms 翻转一次 LED */\\n        static uint32_t cnt = 0;\\n        cnt++;\\n        if(cnt >= 500)  // 500ms\\n        {\\n            cnt = 0;\\n            HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);\\n        }\\n    }\\n}\\n\\n/**\\n * @brief  测试函数: 启动定时器中断\\n */\\nvoid Test_TIM_Base(void)\\n{\\n    MX_TIM2_Init();\\n    HAL_TIM_Base_Start_IT(&htim2);  // 启动中断\\n    printf(\\"TIM2 1ms 定时器已启动！\\\\r\\n\\");\\n    while(1) { /* 等待中断 */ }\\n}",files:[{name:"Inc",type:"folder",children:[{name:"tim.h",type:"file",content:"// tim.h - 定时器声明"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"tim.c",type:"file",content:"// tim.c - 定时器实现"}]}],activeFile:"Src/tim.c"},
+  {id:4,category:"基础篇",title:"TIM PWM输出-频率与占空比",goal:"掌握HAL库PWM输出配置，精确控制频率和占空比。",requirements:["配置 TIM_OC_InitTypeDef PWM 通道","计算 ARR 和 CCR 得到目标频率和占空比","HAL_TIM_PWM_Start() 启动输出"],hints:["PWM频率=定时器时钟/(PSC+1)/(ARR+1)","占空比=CCR/(ARR+1)*100%","TIM_CHANNEL_x 选择通道"],testMethod:"输出 1kHz/50% 占空比 PWM，用示波器测量。",exampleCode:"/**\\n * @brief  TIM PWM 输出初始化框架\\n * @note   输出 1kHz, 50% 占空比方波\\n */\\n\\n#include \\"main.h\\"\\n\\nTIM_HandleTypeDef htim3;\\nTIM_OC_InitTypeDef sConfigOC = {0};\\n\\nvoid MX_TIM3_PWM_Init(void)\\n{\\n    htim3.Instance               = TIM3;\\n    htim3.Init.Prescaler         = 84 - 1;           // 84MHz/84=1MHz\\n    htim3.Init.CounterMode       = TIM_COUNTERMODE_UP;\\n    htim3.Init.Period            = 1000 - 1;          // 1MHz/1000=1kHz\\n    htim3.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;\\n    htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;\\n    HAL_TIM_PWM_Init(&htim3);\\n\\n    /* PWM 通道配置 */\\n    sConfigOC.OCMode     = TIM_OCMODE_PWM1;          // PWM 模式1\\n    sConfigOC.Pulse      = 500;                       // CCR=500, 50%占空比\\n    sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;\\n    sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;\\n    HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1);\\n}\\n\\nvoid Test_PWM(void)\\n{\\n    MX_TIM3_PWM_Init();\\n    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);\\n    printf(\\"PWM 1kHz/50%% 已输出！\\\\r\\n\\");\\n    /* 动态调节占空比 */\\n    for(int i=0;i<=1000;i+=100)\\n    {\\n        __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, i);\\n        HAL_Delay(200);\\n    }\\n    while(1);\\n}",files:[{name:"Inc",type:"folder",children:[{name:"pwm.h",type:"file",content:"// pwm.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"pwm.c",type:"file",content:"// pwm.c"}]}],activeFile:"Src/pwm.c"},
+  {id:5,category:"基础篇",title:"TIM输入捕获-频率/脉宽测量",goal:"掌握HAL库输入捕获功能，实现外部信号的频率和脉宽测量。",requirements:["配置 TIM_IC_InitTypeDef 捕获通道","启动捕获中断 HAL_TIM_IC_Start_IT","计算频率(上升沿间隔)和占空比(高电平时间)"],hints:["上升沿捕获→记录CNT值→下次上升沿间隔=周期","PWM输入模式: 同时捕获上升沿和下降沿","注意捕获溢出处理(定时器重载)"],testMethod:"输入 1kHz 方波(用另一路PWM)，测量并打印频率。",exampleCode:"/**\\n * @brief  TIM 输入捕获初始化框架\\n * @note   测量外部信号的频率和脉宽\\n */\\n\\n#include \\"main.h\\"\\n\\nTIM_HandleTypeDef htim4;\\nTIM_IC_InitTypeDef sConfigIC = {0};\\nvolatile uint32_t cap1=0,cap2=0,freq=0,duty=0;\\nvolatile uint8_t cap_flag=0;\\n\\nvoid MX_TIM4_IC_Init(void)\\n{\\n    htim4.Instance               = TIM4;\\n    htim4.Init.Prescaler         = 84 - 1;   // 1MHz\\n    htim4.Init.CounterMode       = TIM_COUNTERMODE_UP;\\n    htim4.Init.Period            = 65535;\\n    htim4.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;\\n    htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;\\n    HAL_TIM_IC_Init(&htim4);\\n\\n    /* CH1: 上升沿捕获 */\\n    sConfigIC.ICPolarity  = TIM_ICPOLARITY_RISING;\\n    sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;\\n    sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;\\n    sConfigIC.ICFilter    = 0;\\n    HAL_TIM_IC_ConfigChannel(&htim4, &sConfigIC, TIM_CHANNEL_1);\\n}\\n\\nvoid HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)\\n{\\n    if(htim->Instance == TIM4)\\n    {\\
+        cap1 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);\\n        /* 计算频率: 1MHz / cap1 */\\n        freq = 1000000 / (cap1 ? cap1 : 1);\\n    }\\n}\\n\\nvoid Test_IC(void)\\n{\\n    MX_TIM4_IC_Init();\\n    HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_1);\\n    while(1)\\n    {\\n        if(freq > 0)\\n        {\\
+            printf(\\"频率: %lu Hz  CCR: %lu\\\\r\\n\\", freq, cap1);\\
+n            HAL_Delay(500);\\
+        }\\
+n    }\\
+n}",files:[{name:"Inc",type:"folder",children:[{name:"ic.h",type:"file",content:"// ic.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"ic.c",type:"file",content:"// ic.c"}]}],activeFile:"Src/ic.c"},
+  {id:6,category:"基础篇",title:"ADC单次/连续转换",goal:"掌握HAL库ADC配置，实现单次和连续采样模式。",requirements:["配置 ADC_HandleTypeDef 规则组","配置采样时间/分辨率","HAL_ADC_Start/PollForConversion","连续模式启动"],hints:["ADC 时钟≤36MHz (STM32F4)","采样时间=周期数×TCONV","连续模式: EOC 后自动启动下次转换"],testMethod:"用电位器输入0-3.3V，串口打印ADC原始值和电压值。",exampleCode:"/**\\n * @brief  ADC 初始化框架\\n */\\n\\n#include \\"main.h\\"\\n\\nADC_HandleTypeDef hadc1;\\n\\nvoid MX_ADC1_Init(void)\\n{\\n    ADC_ChannelConfTypeDef sConfig = {0};\\n    hadc1.Instance                  = ADC1;\\n    hadc1.Init.ClockPrescaler       = ADC_CLOCK_SYNC_PCLK_DIV4;\\n    hadc1.Init.Resolution           = ADC_RESOLUTION_12B;\\n    hadc1.Init.ScanConvMode         = DISABLE;\\n    hadc1.Init.ContinuousConvMode   = ENABLE;              // 连续模式\\n    hadc1.Init.DiscontinuousConvMode= DISABLE;\\n    hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;\\n    hadc1.Init.DataAlign            = ADC_DATAALIGN_RIGHT;\\n    hadc1.Init.NbrOfConversion      = 1;\\n    hadc1.Init.DMAContinuousRequests= DISABLE;\\n    hadc1.Init.EOCSelection         = ADC_EOC_SINGLE_CONV;\\n    HAL_ADC_Init(&hadc1);\\n\\n    /* 通道0: PA0, 采样周期15 */\\n    sConfig.Channel  = ADC_CHANNEL_0;\\n    sConfig.Rank     = 1;\\n    sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;\\n    HAL_ADC_ConfigChannel(&hadc1, &sConfig);\\n}\\n\\nvoid Test_ADC(void)\\n{\\n    MX_ADC1_Init();\\n    HAL_ADC_Start(&hadc1);           // 启动连续转换\\n    while(1)\\n    {\\n        if(HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK)\\n        {\\
+            uint32_t val = HAL_ADC_GetValue(&hadc1);\\
+            float volt = val * 3.3f / 4096;\\
+            printf(\\"ADC=%lu  %.3fV\\\\r\\n\\", val, volt);\\
+            HAL_Delay(200);\\
+        }\\
+n    }\\
+n}",files:[{name:"Inc",type:"folder",children:[{name:"adc.h",type:"file",content:"// adc.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"adc.c",type:"file",content:"// adc.c"}]}],activeFile:"Src/adc.c"},
+  {id:7,category:"基础篇",title:"UART串口中断收发",goal:"掌握HAL库UART配置，实现中断方式接收与printf重定向。",requirements:["配置 UART_HandleTypeDef 波特率/数据位","HAL_UART_Receive_IT 中断接收","printf 重定向到串口","实现 HAL_UART_RxCpltCallback"],hints:["波特率 115200, 8N1","在 stm32f4xx_hal_conf.h 开启 HAL_UART_MODULE_ENABLED","重定向 fputc → ITM/SWO 或 UART"],testMethod:"PC串口助手发送字符，开发板回显(echo)并打印接收中断计数。",exampleCode:"/**\\n * @brief  UART 中断收发框架\\n */\\n\\n#include \\"main.h\\"\\n\\nUART_HandleTypeDef huart1;\\nuint8_t rx_byte = 0;\\nuint32_t rx_count = 0;\\n\\nvoid MX_USART1_UART_Init(void)\\n{\\n    huart1.Instance         = USART1;\\n    huart1.Init.BaudRate    = 115200;\\n    huart1.Init.WordLength  = UART_WORDLENGTH_8B;\\n    huart1.Init.StopBits    = UART_STOPBITS_1;\\n    huart1.Init.Parity      = UART_PARITY_NONE;\\n    huart1.Init.Mode        = UART_MODE_TX_RX;\\n    huart1.Init.HwFlowCtl   = UART_HWCONTROL_NONE;\\n    huart1.Init.OverSampling= UART_OVERSAMPLING_16;\\n    HAL_UART_Init(&huart1);\\n}\\n\\n/* printf 重定向 */\\nint fputc(int ch, FILE *f)\\n{\\n    HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, 100);\\n    return ch;\\n}\\n\\nvoid HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)\\n{\\n    if(huart->Instance == USART1)\\n    {\\
+        rx_count++;\\
+        HAL_UART_Transmit(&huart1, &rx_byte, 1, 100);  // 回显\\
+        HAL_UART_Receive_IT(&huart1, &rx_byte, 1);      // 重新使能中断\\
+    }\\
+n}\\n\\
+nvoid Test_UART(void)\\n{\\n    MX_USART1_UART_Init();\\
+    HAL_UART_Receive_IT(&huart1, &rx_byte, 1);  // 启动接收中断\\
+    printf(\\"UART 初始化完成！接收计数: %lu\\\\r\\n\\", rx_count);\\
+    while(1) { /* 等待中断 */ }\\
+n}",files:[{name:"Inc",type:"folder",children:[{name:"uart.h",type:"file",content:"// uart.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"uart.c",type:"file",content:"// uart.c"}]}],activeFile:"Src/uart.c"},
+
+  // ===================== 进阶篇 =====================
+  {id:8,category:"进阶篇",title:"SPI全双工通信",goal:"掌握HAL库SPI主机通信，实现Flash存储器读写。",requirements:["配置 SPI_HandleTypeDef 极性/相位/分频","HAL_SPI_Transmit/Receive 读写 Flash","解析 JEDEC ID 识别芯片"],hints:["CPOL=0/CPHA=0 模式0","W25Q64 ID: 0xEF17","SPI时钟≤21MHz"],testMethod:"读取 W25Q64 JEDEC ID，串口打印制造商/设备ID。",exampleCode:"/**\\n * @brief  SPI 初始化与 Flash 读 ID\\n */\\n\\n#include \\"main.h\\"\\n\\nSPI_HandleTypeDef hspi1;\\n\\nvoid MX_SPI1_Init(void)\\n{\\n    hspi1.Instance               = SPI1;\\n    hspi1.Init.Mode              = SPI_MODE_MASTER;\\n    hspi1.Init.Direction         = SPI_DIRECTION_2LINES;\\n    hspi1.Init.DataSize          = SPI_DATASIZE_8BIT;\\n    hspi1.Init.CLKPolarity       = SPI_POLARITY_LOW;\\n    hspi1.Init.CLKPhase          = SPI_PHASE_1EDGE;\\n    hspi1.Init.NSS               = SPI_NSS_SOFT;\\n    hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;\\n    hspi1.Init.FirstBit          = SPI_FIRSTBIT_MSB;\\n    hspi1.Init.TIMode            = SPI_TIMODE_DISABLE;\\n    hspi1.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLE;\\n    HAL_SPI_Init(&hspi1);\\n}\\n\\nuint32_t SPI_ReadJEDEC_ID(void)\\n{\\n    uint8_t cmd = 0x9F;             // JEDEC ID 指令\\n    uint8_t buf[3] = {0};\\n    HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);\\n    HAL_SPI_Transmit(&hspi1, &cmd, 1, 10);\\n    HAL_SPI_Receive(&hspi1, buf, 3, 10);\\n    HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);\\n    return (buf[0]<<16) | (buf[1]<<8) | buf[2];\\n}\\n\\nvoid Test_SPI(void)\\n{\\n    MX_SPI1_Init();\\n    uint32_t id = SPI_ReadJEDEC_ID();\\n    printf(\\"JEDEC ID: 0x%06lX  MF=0x%02X MEM=0x%02X\\\\r\\n\\", id, (id>>16)&0xFF, (id>>8)&0xFF);\\n}",files:[{name:"Inc",type:"folder",children:[{name:"spi.h",type:"file",content:"// spi.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"spi.c",type:"file",content:"// spi.c"}]}],activeFile:"Src/spi.c"},
+  {id:9,category:"进阶篇",title:"I2C主机通信-MPU6050",goal:"掌握HAL库I2C主机协议，驱动MPU6050加速度计/陀螺仪。",requirements:["配置 I2C_HandleTypeDef 时序","HAL_I2C_Mem_Read/Write 寄存器读写","初始化 MPU6050 并读取加速度"],hints:["I2C 地址 0x68 (7位)","PWR_MGMT_1(0x6B)写0唤醒","ACCEL_XOUT_H(0x3B)开始6字节"],testMethod:"初始化MPU6050，循环读取加速度三轴数据并串口打印。",exampleCode:"/**\\n * @brief  I2C 初始化与 MPU6050 读取\\n */\\n\\n#include \\"main.h\\"\\n\\nI2C_HandleTypeDef hi2c1;\\n#define MPU6050_ADDR (0x68 << 1)  // 7位左移1位为8位地址\\n\\nvoid MX_I2C1_Init(void)\\n{\\n    hi2c1.Instance             = I2C1;\\n    hi2c1.Init.ClockSpeed      = 400000;\\n    hi2c1.Init.DutyCycle       = I2C_DUTYCYCLE_2;\\n    hi2c1.Init.OwnAddress1     = 0;\\n    hi2c1.Init.AddressingMode  = I2C_ADDRESSINGMODE_7BIT;\\n    hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;\\n    hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;\\n    hi2c1.Init.NoStretchMode   = I2C_NOSTRETCH_DISABLE;\\n    HAL_I2C_Init(&hi2c1);\\n}\\n\\nvoid MPU6050_Init(void)\\n{\\n    uint8_t val = 0x00;\\n    HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, 0x6B, 1, &val, 1, 100);  // 唤醒\\n    val = 0x00;\\n    HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, 0x1C, 1, &val, 1, 100);  // ±2g\\n}\\n\\nvoid MPU6050_ReadAccel(int16_t *ax, int16_t *ay, int16_t *az)\\n{\\n    uint8_t buf[6] = {0};\\n    HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, 0x3B, 1, buf, 6, 100);\\n    *ax = (buf[0]<<8)|buf[1];\\n    *ay = (buf[2]<<8)|buf[3];\\n    *az = (buf[4]<<8)|buf[5];\\n}\\n\\nvoid Test_I2C(void)\\n{\\n    MX_I2C1_Init();\\n    MPU6050_Init();\\n    while(1)\\n    {\\
+        int16_t ax, ay, az;\\
+        MPU6050_ReadAccel(&ax, &ay, &az);\\
+        printf(\\"ACC: %d %d %d\\\\r\\n\\", ax, ay, az);\\
+        HAL_Delay(100);\\
+    }\\
+n}",files:[{name:"Inc",type:"folder",children:[{name:"i2c.h",type:"file",content:"// i2c.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"i2c.c",type:"file",content:"// i2c.c"}]}],activeFile:"Src/i2c.c"},
+  {id:10,category:"进阶篇",title:"DMA数据传输",goal:"掌握HAL库DMA配置，实现内存到内存/外设到内存数据传输。",requirements:["配置 DMA_HandleTypeDef 源/目标地址","设置数据传输方向和宽度","DMA 循环模式持续传输"],hints:["DMA 地址递增可分别设源和目标","DMA2 流0-7, 通道选择","DMA 中断: HAL_DMA_XferCpltCallback"],testMethod:"DMA 从内存数组传输到另一个数组，串口打印验证。",exampleCode:"/**\\n * @brief  DMA 数据传输框架\\n */\\n\\n#include \\"main.h\\"\\n\\nDMA_HandleTypeDef hdma_mem2mem;\\n#define DMA_BUF_SIZE 256\\nuint32_t src_buf[DMA_BUF_SIZE];\\nuint32_t dst_buf[DMA_BUF_SIZE];\\nuint8_t dma_done = 0;\\n\\nvoid MX_DMA_Init(void)\\n{\\n    __HAL_RCC_DMA2_CLK_ENABLE();\\n    hdma_mem2mem.Instance                 = DMA2_Stream0;\\n    hdma_mem2mem.Init.Channel             = DMA_CHANNEL_0;\\n    hdma_mem2mem.Init.Direction           = DMA_MEMORY_TO_MEMORY;\\n    hdma_mem2mem.Init.PeriphInc           = DMA_PINC_ENABLE;\\n    hdma_mem2mem.Init.MemInc              = DMA_MINC_ENABLE;\\n    hdma_mem2mem.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;\\n    hdma_mem2mem.Init.MemDataAlignment    = DMA_MDATAALIGN_WORD;\\n    hdma_mem2mem.Init.Mode                = DMA_NORMAL;\\n    hdma_mem2mem.Init.Priority            = DMA_PRIORITY_HIGH;\\n    HAL_DMA_Init(&hdma_mem2mem);\\n    __HAL_LINKDMA(&hdma_mem2mem, hdma_mem2mem, hdma_mem2mem);\\n}\\n\\nvoid HAL_DMA_XferCpltCallback(DMA_HandleTypeDef *hdma)\\n{\\n    if(hdma->Instance == DMA2_Stream0)\\n        dma_done = 1;\\
+n}\\n\\
+nvoid Test_DMA(void)\\n{\\n    for(int i=0;i<DMA_BUF_SIZE;i++) src_buf[i] = i;\\
+    MX_DMA_Init();\\
+    HAL_DMA_Start_IT(&hdma_mem2mem, (uint32_t)src_buf, (uint32_t)dst_buf, DMA_BUF_SIZE);\\
+    while(!dma_done);\\
+    /* 验证前 10 个 */\\
+    for(int i=0;i<10;i++)\\n        printf(\\"dst[%d]=%lu\\\\r\\n\\", i, dst_buf[i]);\\
+n}",files:[{name:"Inc",type:"folder",children:[{name:"dma.h",type:"file",content:"// dma.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"dma.c",type:"file",content:"// dma.c"}]}],activeFile:"Src/dma.c"},
+  {id:11,category:"进阶篇",title:"TIM编码器接口",goal:"掌握HAL库编码器接口模式，实现电机转速和方向检测。",requirements:["配置 TIM_Encoder_InitTypeDef","HAL_TIM_Encoder_Start 启动","计算转速(RPM)和方向"],hints:["编码器模式3: TI1+TI2 双沿计数","每圈脉冲数 PPR×4 (4倍频)","CNT 递增/递减表示正/反转"],testMethod:"手动旋转编码器，串口打印位置和方向。",exampleCode:"/**\\n * @brief  TIM 编码器接口框架\\n */\\n\\n#include \\"main.h\\"\\n\\nTIM_HandleTypeDef htim5;\\nTIM_Encoder_InitTypeDef sEncoder = {0};\\nint32_t last_cnt = 0;\\n\\nvoid MX_TIM5_Encoder_Init(void)\\n{\\n    htim5.Instance               = TIM5;\\n    htim5.Init.Prescaler         = 0;\\n    htim5.Init.CounterMode       = TIM_COUNTERMODE_UP;\\n    htim5.Init.Period            = 65535;\\n    htim5.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;\\n    htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;\\n\\n    /* 编码器模式 3: TI1+TI2 均计数 */\\n    sEncoder.EncoderMode  = TIM_ENCODERMODE_TI12;\\n    sEncoder.IC1Polarity  = TIM_ICPOLARITY_RISING;\\n    sEncoder.IC1Selection = TIM_ICSELECTION_DIRECTTI;\\n    sEncoder.IC1Prescaler = TIM_ICPSC_DIV1;\\n    sEncoder.IC1Filter    = 0;\\n    sEncoder.IC2Polarity  = TIM_ICPOLARITY_RISING;\\n    sEncoder.IC2Selection = TIM_ICSELECTION_DIRECTTI;\\n    sEncoder.IC2Prescaler = TIM_ICPSC_DIV1;\\n    sEncoder.IC2Filter    = 0;\\n    HAL_TIM_Encoder_Init(&htim5, &sEncoder);\\n}\\n\\nvoid Test_Encoder(void)\\n{\\n    MX_TIM5_Encoder_Init();\\n    HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);\\n    while(1)\\n    {\\
+        int32_t cnt = (int16_t)__HAL_TIM_GET_COUNTER(&htim5);\\
+        int32_t delta = cnt - last_cnt;\\
+        last_cnt = cnt;\\
+        printf(\\"CNT=%ld  Δ=%ld\\\\r\\n\\", cnt, delta);\\
+        HAL_Delay(100);\\
+    }\\
+n}",files:[{name:"Inc",type:"folder",children:[{name:"encoder.h",type:"file",content:"// encoder.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"encoder.c",type:"file",content:"// encoder.c"}]}],activeFile:"Src/encoder.c"},
+  {id:12,category:"进阶篇",title:"DAC+TIM触发波形",goal:"掌握HAL库DAC配置，结合定时器触发输出任意波形。",requirements:["配置 DAC_HandleTypeDef 通道","定时器触发 DAC 转换","DMA 传输波形表"],hints:["DAC 分辨率 8/12位","TIM6/TRGO 触发 DAC","DMA 循环模式输出连续波形"],testMethod:"输出 1kHz 正弦波(查表法)到 PA4，示波器观察。",exampleCode:"/**\\n * @brief  DAC + TIM 触发波形框架\\n */\\n\\n#include \\"main.h\\"\\n\\nDAC_HandleTypeDef hdac;\\nTIM_HandleTypeDef htim6;\\n#define WAVE_POINTS 128\\nuint16_t sine_wave[WAVE_POINTS];\\n\\n/* 生成正弦波表 */\\nvoid GenSineTable(void)\\n{\\n    for(int i=0;i<WAVE_POINTS;i++)\\n        sine_wave[i] = (uint16_t)(2048 + 2047 * sin(2*3.14159*i/WAVE_POINTS));\\
+n}\\n\\
+nvoid MX_DAC_Init(void)\\n{\\n    DAC_ChannelConfTypeDef sConfig = {0};\\
+    hdac.Instance = DAC;\\
+    HAL_DAC_Init(&hdac);\\
+    sConfig.DAC_Trigger      = DAC_TRIGGER_T6_TRGO;\\
+    sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;\\
+    HAL_DAC_ConfigChannel(&hdac, &sConfig, DAC_CHANNEL_1);\\
+n}\\n\\
+n/* TIM6 触发 DAC */\\
+nvoid MX_TIM6_Init(void)\\n{\\n    htim6.Instance = TIM6;\\
+    htim6.Init.Prescaler = 1;\\
+    htim6.Init.Period    = 84000000/2/WAVE_POINTS/1000;  // 1kHz\\
+    HAL_TIM_Base_Init(&htim6);\\
+    TIM_MasterConfigTypeDef sMasterConfig = {0};\\
+    sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;\\
+    HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig);\\
+n}\\n\\
+nvoid Test_DAC(void)\\n{\\n    GenSineTable();\\
+    MX_DAC_Init();\\
+    MX_TIM6_Init();\\
+    HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, sine_wave, WAVE_POINTS, DAC_ALIGN_12B_R);\\
+    HAL_TIM_Base_Start(&htim6);\\
+    printf(\\"DAC 1kHz 正弦波输出中...\\\\r\\n\\");\\
+    while(1);\\
+n}",files:[{name:"Inc",type:"folder",children:[{name:"dac.h",type:"file",content:"// dac.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"dac.c",type:"file",content:"// dac.c"}]}],activeFile:"Src/dac.c"},
+  {id:13,category:"进阶篇",title:"IWDG/WWDG看门狗",goal:"掌握HAL库独立看门狗和窗口看门狗配置，实现系统故障自恢复。",requirements:["IWDG 独立看门狗配置与喂狗","WWDG 窗口看门狗早期唤醒中断","模拟死循环看门狗复位"],hints:["IWDG 使用 LSI ~32kHz","WWDG 窗口: 上窗口 T[6:0]","WWDG_EWIF 提前唤醒中断"],testMethod:"配置 IWDG 2秒超时，主循环1秒喂狗，模拟卡死观察复位。",exampleCode:"/**\\n * @brief  IWDG/WWDG 看门狗框架\\n */\\n\\n#include \\"main.h\\"\\n\\nIWDG_HandleTypeDef hiwdg;\\nWWDG_HandleTypeDef hwwdg;\\n\\nvoid MX_IWDG_Init(void)\\n{\\n    hiwdg.Instance       = IWDG;\\n    hiwdg.Init.Prescaler = IWDG_PRESCALER_64;  // LSI=32kHz/64=512Hz\\n    hiwdg.Init.Reload    = 1024;               // 2 秒超时\\n    HAL_IWDG_Init(&hiwdg);\\n}\\n\\nvoid MX_WWDG_Init(void)\\n{\\n    hwwdg.Instance                 = WWDG;\\n    hwwdg.Init.Prescaler           = WWDG_PRESCALER_8;\\n    hwwdg.Init.Window              = 80;\\n    hwwdg.Init.Counter             = 127;\\n    hwwdg.Init.EWIMode             = WWDG_EWI_ENABLE;\\n    HAL_WWDG_Init(&hwwdg);\\n}\\n\\nvoid HAL_WWDG_EarlyWakeupCallback(WWDG_HandleTypeDef *hwwdg)\\n{\\n    /* 窗口看门狗提前唤醒 - 执行紧急保存 */\\
+    printf(\\"WWDG 即将复位! 执行紧急处理...\\\\r\\n\\");\\
+n}\\n\\
+nvoid Test_IWDG(void)\\n{\\n    MX_IWDG_Init();\\
+    uint32_t cnt = 0;\\
+    while(1)\\n    {\\
+        HAL_IWDG_Refresh(&hiwdg);  // 喂狗\\
+        printf(\\"喂狗 %lu...\\\\r\\n\\", cnt++);\\
+        HAL_Delay(1000);  // 1秒间隔\\
+    }\\
+n}",files:[{name:"Inc",type:"folder",children:[{name:"wdg.h",type:"file",content:"// wdg.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"wdg.c",type:"file",content:"// wdg.c"}]}],activeFile:"Src/wdg.c"},
+  {id:14,category:"进阶篇",title:"RTC实时时钟",goal:"掌握HAL库RTC配置，实现日历设置与闹钟中断。",requirements:["配置 RTC_HandleTypeDef 日历","HAL_RTC_GetTime/GetDate 读取","配置 RTC 闹钟中断"],hints:["RTC 使用 LSE 32.768kHz","时间格式: 24小时制","闹钟可设置秒/分/时/星期"],testMethod:"设置RTC时间为当前时间，配置每秒闹钟中断，串口每秒打印时间。",exampleCode:"/**\\n * @brief  RTC 实时时钟框架\\n */\\n\\n#include \\"main.h\\"\\n\\nRTC_HandleTypeDef hrtc;\\n\\nvoid MX_RTC_Init(void)\\n{\\n    RTC_TimeTypeDef sTime = {0};\\n    RTC_DateTypeDef sDate = {0};\\n\\n    hrtc.Instance = RTC;\\n    hrtc.Init.HourFormat     = RTC_HOURFORMAT_24;\\n    hrtc.Init.AsynchPrediv   = 127;\\n    hrtc.Init.SynchPrediv    = 255;\\n    hrtc.Init.OutPut         = RTC_OUTPUT_DISABLE;\\n    hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;\\n    hrtc.Init.OutPutType     = RTC_OUTPUT_TYPE_OPENDRAIN;\\n    HAL_RTC_Init(&hrtc);\\n\\n    /* 设置时间 12:00:00 */\\
+    sTime.Hours   = 12;\\
+    sTime.Minutes = 0;\\
+    sTime.Seconds = 0;\\
+    sTime.TimeFormat = RTC_HOURFORMAT_24;\\
+    HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);\\
+}\\n\\nvoid HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtp)\\n{\\n    RTC_TimeTypeDef sTime = {0};\\
+    RTC_DateTypeDef sDate = {0};\\
+    HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);\\
+    HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);\\
+    printf(\\"%02d:%02d:%02d  %d-%02d-%02d\\\\r\\n\\",\\
+           sTime.Hours, sTime.Minutes, sTime.Seconds,\\n           sDate.Year+2000, sDate.Month, sDate.Date);\\
+n}\\n\\
+nvoid Test_RTC(void)\\n{\\n    MX_RTC_Init();\\
+    /* 配置每秒闹钟 */\\
+    RTC_AlarmTypeDef sAlarm = {0};\\
+    sAlarm.AlarmTime.Seconds = 0;\\
+    sAlarm.Alarm = RTC_ALARM_A;\\
+    HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BIN);\\
+    printf(\\"RTC 已启动，闹钟每秒触发...\\\\r\\n\\");\\
+    while(1);\\
+n}",files:[{name:"Inc",type:"folder",children:[{name:"rtc.h",type:"file",content:"// rtc.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"rtc.c",type:"file",content:"// rtc.c"}]}],activeFile:"Src/rtc.c"},
+
+  // ===================== 工程师篇 =====================
+  {id:15,category:"工程师篇",title:"高级定时器-死区与互补PWM",goal:"掌握HAL库高级定时器TIM1/TIM8的死区配置和互补输出。",requirements:["配置 TIM_BreakDeadTimeConfig","CHx/CHxN 互补PWM输出","刹车输入(BKIN)功能"],hints:["死区=DTG[7:0]×Tclk, DTG[7:5]决定步长","刹车输入极性可配置","刹车状态: MOS管全部关闭"],testMethod:"示波器观察互补PWM是否存在死区。",exampleCode:"/**\\n * @brief  高级定时器死区与互补输出框架\\n */\\n\\n#include \\"main.h\\"\\n\\nTIM_HandleTypeDef htim1;\\nTIM_BreakDeadTimeConfigTypeDef sBreakDead = {0};\\n\\nvoid MX_TIM1_Init(void)\\n{\\n    TIM_OC_InitTypeDef sConfigOC = {0};\\
+    htim1.Instance = TIM1;\\
+    htim1.Init.Prescaler         = 84 - 1;\\
+    htim1.Init.CounterMode       = TIM_COUNTERMODE_UP;\\
+    htim1.Init.Period            = 1000 - 1;\\
+    htim1.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;\\
+    htim1.Init.RepetitionCounter = 0;\\
+    htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;\\
+    HAL_TIM_PWM_Init(&htim1);\\
+\\
+    sConfigOC.OCMode     = TIM_OCMODE_PWM1;\\
+    sConfigOC.Pulse      = 500;\\
+    sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;\\
+    sConfigOC.OCNPolarity= TIM_OCNPOLARITY_HIGH;\\
+    sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;\\
+    sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;\\
+    sConfigOC.OCNIdleState= TIM_OCNIDLESTATE_RESET;\\
+    HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1);\\
+\\
+    /* 死区配置 1us */\\
+    sBreakDead.OffStateRunMode  = TIM_OSSR_ENABLE;\\
+    sBreakDead.OffStateIDLEMode = TIM_OSSI_ENABLE;\\
+    sBreakDead.LockLevel        = TIM_LOCKLEVEL_OFF;\\
+    sBreakDead.DeadTime         = 84;  // 84 ticks @84MHz = 1us\\
+    sBreakDead.BreakState       = TIM_BREAK_ENABLE;\\
+    sBreakDead.BreakPolarity    = TIM_BREAKPOLARITY_HIGH;\\
+    sBreakDead.AutomaticOutput  = TIM_AUTOMATICOUTPUT_ENABLE;\\
+    HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDead);\\
+n}\\n\\
+nvoid Test_DeadTime(void)\\n{\\n    MX_TIM1_Init();\\
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);\\
+    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);  // 互补通道\\
+    printf(\\"互补PWM已输出! 死区1us\\\\r\\n\\");\\
+    while(1);\\
+n}",files:[{name:"Inc",type:"folder",children:[{name:"advtim.h",type:"file",content:"// advtim.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"advtim.c",type:"file",content:"// advtim.c"}]}],activeFile:"Src/advtim.c"},
+  {id:16,category:"工程师篇",title:"TIM主从同步-多定时器级联",goal:"掌握HAL库定时器主从同步，实现多路定时器触发级联。",requirements:["TIM_MasterConfigTypeDef 主模式配置","从模式复位/门控/触发","多个定时器同步输出"],hints:["主TIM输出TRGO→从TIM输入","从模式: ITR0~ITR3 对应不同定时器","可用于PWM移相/多相电机控制"],testMethod:"TIM2主→TIM3从，示波器观察两个PWM同步输出。",exampleCode:"/**\\n * @brief  TIM 主从同步框架\\n * @note   TIM2 主模式输出TRGO, TIM3 从模式同步\\n */\\n\\n#include \\"main.h\\"\\n\\nTIM_HandleTypeDef htim2, htim3;\\n\\nvoid MX_TIM2_Master_Init(void)\\n{\\n    TIM_MasterConfigTypeDef sMasterConfig = {0};\\
+    htim2.Instance = TIM2;\\
+    htim2.Init.Prescaler         = 84 - 1;\\
+    htim2.Init.Period            = 1000 - 1;\\
+    HAL_TIM_PWM_Init(&htim2);\\
+    sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;\\
+    sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_ENABLE;\\
+    HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig);\\
+    /* 配置 PWM */\\
+    TIM_OC_InitTypeDef sConfigOC = {0};\\
+    sConfigOC.OCMode = TIM_OCMODE_PWM1;\\
+    sConfigOC.Pulse = 500;\\
+    HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1);\\
+n}\\n\\
+nvoid MX_TIM3_Slave_Init(void)\\n{\\n    TIM_SlaveConfigTypeDef sSlaveConfig = {0};\\
+    htim3.Instance = TIM3;\\
+    htim3.Init.Prescaler = 84 - 1;\\
+    htim3.Init.Period    = 1000 - 1;\\
+    HAL_TIM_PWM_Init(&htim3);\\
+    sSlaveConfig.SlaveMode    = TIM_SLAVEMODE_RESET;\\
+    sSlaveConfig.InputTrigger = TIM_TS_ITR1;  // TIM2→ITR1\\
+    HAL_TIM_SlaveConfigSynchro_Start(&htim2, &sSlaveConfig);\\
+    TIM_OC_InitTypeDef sConfigOC = {0};\\
+    sConfigOC.OCMode = TIM_OCMODE_PWM1;\\
+    sConfigOC.Pulse = 500;\\
+    HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1);\\
+n}\\n\\
+nvoid Test_MasterSlave(void)\\n{\\n    MX_TIM2_Master_Init();\\
+    MX_TIM3_Slave_Init();\\
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);\\
+    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);\\
+    printf(\\"主从同步PWM已输出!\\\\r\\n\\");\\
+    while(1);\\
+n}",files:[{name:"Inc",type:"folder",children:[{name:"sync.h",type:"file",content:"// sync.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"sync.c",type:"file",content:"// sync.c"}]}],activeFile:"Src/sync.c"},
+  {id:17,category:"工程师篇",title:"CAN/FDCAN通信",goal:"掌握HAL库CAN控制器配置，实现报文收发。",requirements:["配置 CAN_FilterTypeDef 过滤器","CAN 波特率计算","HAL_CAN_AddTxMessage 发送","中断接收回调"],hints:["CAN 时钟 APB1 (42MHz)","波特率=42M/(BRP+1)/(Seg1+Seg2+1)","标准帧11位ID, 扩展帧29位"],testMethod:"两个CAN节点互相发送接收，验证通信。",exampleCode:"/**\\n * @brief  CAN 通信框架\\n */\\n\\n#include \\"main.h\\"\\n\\nCAN_HandleTypeDef hcan1;\\nCAN_TxHeaderTypeDef TxHeader;\\nCAN_RxHeaderTypeDef RxHeader;\\nuint8_t tx_data[8], rx_data[8];\\n\\nvoid MX_CAN1_Init(void)\\n{\\n    hcan1.Instance = CAN1;\\
+    hcan1.Init.Prescaler       = 3;\\
+    hcan1.Init.Mode            = CAN_MODE_NORMAL;\\
+    hcan1.Init.SyncJumpWidth   = CAN_SJW_1TQ;\\
+    hcan1.Init.TimeSeg1        = CAN_BS1_13TQ;\\
+    hcan1.Init.TimeSeg2        = CAN_BS2_2TQ;\\
+    hcan1.Init.TimeTriggeredMode = DISABLE;\\
+    hcan1.Init.AutoBusOff      = DISABLE;\\
+    hcan1.Init.AutoWakeUp      = DISABLE;\\
+    hcan1.Init.AutoRetransmission = ENABLE;\\
+    hcan1.Init.ReceiveFifoLocked  = DISABLE;\\
+    hcan1.Init.TransmitFifoPriority = DISABLE;\\
+    HAL_CAN_Init(&hcan1);\\
+\\
+    /* 过滤器: 接收所有报文 */\\
+    CAN_FilterTypeDef sFilterConfig = {0};\\
+    sFilterConfig.FilterBank         = 0;\\
+    sFilterConfig.FilterMode         = CAN_FILTERMODE_IDMASK;\\
+    sFilterConfig.FilterScale        = CAN_FILTERSCALE_32BIT;\\
+    sFilterConfig.FilterIdHigh       = 0x0000;\\
+    sFilterConfig.FilterIdLow        = 0x0000;\\
+    sFilterConfig.FilterMaskIdHigh   = 0x0000;\\
+    sFilterConfig.FilterMaskIdLow    = 0x0000;\\
+    sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;\\
+    sFilterConfig.FilterActivation   = ENABLE;\\
+    HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig);\\
+n}\\n\\
+nvoid HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)\\n{\\n    HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, rx_data);\\
+    printf(\\"CAN Rx ID=0x%03lX DLC=%d\\", RxHeader.StdId, RxHeader.DLC);\\
+n}\\n\\
+nvoid Test_CAN(void)\\n{\\n    MX_CAN1_Init();\\
+    HAL_CAN_Start(&hcan1);\\
+    HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);\\
+    /* 发送报文 */\\
+    TxHeader.StdId = 0x123;\\
+    TxHeader.DLC   = 8;\\
+    for(int i=0;i<8;i++) tx_data[i] = i;\\
+    HAL_CAN_AddTxMessage(&hcan1, &TxHeader, tx_data, (uint32_t*)CAN_TX_MAILBOX0);\\
+    printf(\\"CAN 已启动! 发送标准帧 ID=0x123\\\\r\\n\\");\\
+    while(1);\\
+n}",files:[{name:"Inc",type:"folder",children:[{name:"can.h",type:"file",content:"// can.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"can.c",type:"file",content:"// can.c"}]}],activeFile:"Src/can.c"},
+  {id:18,category:"工程师篇",title:"Flash读写与选项字节",goal:"掌握HAL库Flash操作，实现内部Flash读写和扇区管理。",requirements:["HAL_FLASH_Unlock/Program/Lock","扇区擦除 HAL_FLASHEx_Erase","选项字节编程"],hints:["STM32F407 扇区大小: 16KB~128KB","写入必须按字(32bit)或半字(16bit)","擦除前必须解锁, 写入后立即锁"],testMethod:"写入数据到Flash最后一个扇区，复位后读取验证。",exampleCode:"/**\\n * @brief  Flash 读写框架\\n */\\n\\n#include \\"main.h\\"\\n\\n#define FLASH_TARGET_ADDR 0x080E0000  // 扇区7 (128KB区)\\n\\nvoid Test_Flash(void)\\n{\\n    uint32_t write_data = 0xAABBCCDD;\\
+    uint32_t read_data;\\
+\\
+    /* 擦除扇区 */\\
+    FLASH_EraseInitTypeDef EraseInitStruct = {0};\\
+    uint32_t SectorError = 0;\\
+    HAL_FLASH_Unlock();\\
+    EraseInitStruct.TypeErase   = FLASH_TYPEERASE_SECTORS;\\
+    EraseInitStruct.VoltageRange= FLASH_VOLTAGE_RANGE_3;\\
+    EraseInitStruct.Sector      = FLASH_SECTOR_7;\\
+    EraseInitStruct.NbSectors   = 1;\\
+    HAL_FLASHEx_Erase(&EraseInitStruct, &SectorError);\\
+\\
+    /* 写入 */\\
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, FLASH_TARGET_ADDR, write_data);\\
+    HAL_FLASH_Lock();\\
+\\
+    /* 读取验证 */\\
+    read_data = *(__IO uint32_t*)FLASH_TARGET_ADDR;\\
+    printf(\\"写入: 0x%08lX  读取: 0x%08lX\\\\r\\n\\", write_data, read_data);\\
+    if(write_data == read_data)\\n        printf(\\"Flash 读写验证通过!\\\\r\\n\\");\\
+    else\\
+        printf(\\"Flash 读写失败!\\\\r\\n\\");\\
+n}",files:[{name:"Inc",type:"folder",children:[{name:"flash.h",type:"file",content:"// flash.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"flash.c",type:"file",content:"// flash.c"}]}],activeFile:"Src/flash.c"},
+
+  // ===================== 综合项目 =====================
+  {id:19,category:"综合项目",title:"多外设综合:数据采集系统",goal:"整合GPIO+TIM+ADC+UART+DMA五外设，构建完整的数据采集与传输系统。",requirements:["TIM3 1ms触发ADC连续采样","DMA循环传输ADC数据到缓冲区","UART中断DMA发送采集结果","GPIO按键启停采集"],hints:["ADC+DMA: 双缓冲模式避免数据竞争","UART DMA: 使用 DMATx 发送","关键: 正确配置 DMA 中断优先级"],testMethod:"启动采集后，串口持续收到"CH0:1.234V CH1:2.345V"格式的数据流。",exampleCode:"/**\\n * @brief  多外设综合: 数据采集系统\\n * @note   TIM3 → ADC1 → DMA2 → UART1 数据流\\n */\\n\\n#include \\"main.h\\"\\n\\nADC_HandleTypeDef hadc1;\\nDMA_HandleTypeDef hdma_adc1;\\nUART_HandleTypeDef huart1;\\nTIM_HandleTypeDef htim3;\\n\\n#define ADC_BUF_LEN 128\\nuint16_t adc_buf[ADC_BUF_LEN];\\nuint8_t tx_buf[64];\\nvolatile uint8_t adc_ready = 0;\\n\\n/* ADC + DMA 初始化 */\\nvoid MX_ADC1_DMA_Init(void)\\n{\\n    __HAL_RCC_DMA2_CLK_ENABLE();\\
+    hdma_adc1.Instance = DMA2_Stream0;\\
+    hdma_adc1.Init.Channel = DMA_CHANNEL_0;\\
+    hdma_adc1.Init.Direction = DMA_PERIPH_TO_MEMORY;\\
+    hdma_adc1.Init.PeriphInc = DMA_PINC_DISABLE;\\
+    hdma_adc1.Init.MemInc = DMA_MINC_ENABLE;\\
+    hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;\\
+    hdma_adc1.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;\\
+    hdma_adc1.Init.Mode = DMA_CIRCULAR;\\
+    hdma_adc1.Init.Priority = DMA_PRIORITY_HIGH;\\
+    HAL_DMA_Init(&hdma_adc1);\\
+    __HAL_LINKDMA(&hadc1, DMA_Handle, hdma_adc1);\\
+\\
+    hadc1.Instance = ADC1;\\
+    hadc1.Init.ContinuousConvMode = ENABLE;\\
+    hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T3_TRGO;  // TIM3触发\\
+    HAL_ADC_Init(&hadc1);\\
+}\\n\\
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)\\n{\\n    if(hadc->Instance == ADC1)\\n    {\\
+        adc_ready = 1;\\
+        /* 发送最近两个值 */\\
+        float v0 = adc_buf[0] * 3.3f / 4096;\\
+        float v1 = adc_buf[1] * 3.3f / 4096;\\
+        int len = snprintf((char*)tx_buf, 64, \\"CH0:%.3fV CH1:%.3fV\\\\r\\n\\", v0, v1);\\
+        HAL_UART_Transmit_DMA(&huart1, tx_buf, len);\\
+    }\\
+n}\\n\\
+nvoid Test_System(void)\\n{\\n    MX_ADC1_DMA_Init();\\
+    MX_USART1_UART_Init();\\
+    MX_TIM3_PWM_Init();  // 配置为触发输出\\
+    HAL_TIM_Base_Start(&htim3);\\
+    HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buf, ADC_BUF_LEN);\\
+    printf(\\"数据采集系统已启动!\\\\r\\n\\");\\
+    while(1);\\
+n}",files:[{name:"Inc",type:"folder",children:[{name:"system.h",type:"file",content:"// system.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"system.c",type:"file",content:"// system.c"}]}],activeFile:"Src/system.c"}
+];
+
 // ===================================================================
 // STATE
 // ===================================================================
 let currentUser=null,currentExercise=null;
 let userEditor=null,exampleEditor=null,monacoLoaded=false,firebaseInitialized=false;
-let progress={completedLevels:[]},tabState={},ctxTargetPath=null,ctxTargetPathType='file';
+let controlProgress={completedLevels:[]},halProgress={completedLevels:[]};
+let currentDataset=practiceData,currentProgress=controlProgress;
+let tabState={},ctxTargetPath=null,ctxTargetPathType='file';
 let fileTreeCollapsed=false,folderOpenState={};
 let initError=null;
 
@@ -456,14 +755,32 @@ function switchAuthTab(t){['login','register'].forEach(x=>{const el=document.get
 async function handleLogin(){const e=document.getElementById('login-email').value.trim(),p=document.getElementById('login-pass').value.trim(),er=document.getElementById('login-err'),btn=document.getElementById('login-btn');if(!e||!p){er.textContent='请输入邮箱和密码';er.style.display='block';return;}btn.disabled=true;btn.textContent='登录中...';try{if(firebaseInitialized)await firebase.auth().signInWithEmailAndPassword(e,p);else{const s=localStorage.getItem('local_user_'+e);if(!s)throw new Error('用户不存在');const d=JSON.parse(s);if(d.password!==p)throw new Error('密码错误');currentUser={email:e,uid:e};initApp();}}catch(err){er.textContent=err.message;er.style.display='block';}btn.disabled=false;btn.textContent='登 录';}
 async function getUserCount(){if(!firebaseInitialized||!db)return 0;try{const snap=await db.collection('users').get();return snap.size;}catch(e){console.warn('getUserCount error:',e);return 0;}}
 async function updateUserCountBadge(){if(firebaseInitialized){const c=await getUserCount();const el=document.getElementById('user-count-badge');if(el)el.textContent='👥 '+c+'/'+MAX_USERS;}}
-async function handleRegister(){const e=document.getElementById('reg-email').value.trim(),p=document.getElementById('reg-pass').value.trim(),c=document.getElementById('reg-confirm').value.trim(),er=document.getElementById('reg-err'),btn=document.getElementById('reg-btn');if(!e||!p){er.textContent='请填写邮箱和密码';er.style.display='block';return;}if(p.length<6){er.textContent='密码至少6位';er.style.display='block';return;}if(p!==c){er.textContent='两次密码不一致';er.style.display='block';return;}btn.disabled=true;btn.textContent='注册中...';try{if(firebaseInitialized){const count=await getUserCount();if(count>=MAX_USERS){er.textContent='注册名额已满（上限'+MAX_USERS+'人）';er.style.display='block';btn.disabled=false;btn.textContent='注 册';return;}const cred=await firebase.auth().createUserWithEmailAndPassword(e,p);await db.collection('users').doc(cred.user.uid).set({email:e,progress:{},createdAt:firebase.firestore.FieldValue.serverTimestamp()});currentUser={email:e,uid:cred.user.uid};localStorage.setItem('workbuddy_user',JSON.stringify(currentUser));initApp();}else{if(localStorage.getItem('local_user_'+e))throw new Error('已注册');localStorage.setItem('local_user_'+e,JSON.stringify({email:e,password:p}));currentUser={email:e,uid:e};localStorage.setItem('workbuddy_user',JSON.stringify(currentUser));initApp();}}catch(err){er.textContent=err.message;er.style.display='block';}btn.disabled=false;btn.textContent='注 册';}
+async function handleRegister(){const e=document.getElementById('reg-email').value.trim(),p=document.getElementById('reg-pass').value.trim(),c=document.getElementById('reg-confirm').value.trim(),er=document.getElementById('reg-err'),btn=document.getElementById('reg-btn');if(!e||!p){er.textContent='请填写邮箱和密码';er.style.display='block';return;}if(p.length<6){er.textContent='密码至少6位';er.style.display='block';return;}if(p!==c){er.textContent='两次密码不一致';er.style.display='block';return;}btn.disabled=true;btn.textContent='注册中...';try{if(firebaseInitialized){const count=await getUserCount();if(count>=MAX_USERS){er.textContent='注册名额已满（上限'+MAX_USERS+'人）';er.style.display='block';btn.disabled=false;btn.textContent='注 册';return;}const cred=await firebase.auth().createUserWithEmailAndPassword(e,p);await db.collection('users').doc(cred.user.uid).set({email:e,controlProgress:{completedLevels:[]},halProgress:{completedLevels:[]},createdAt:firebase.firestore.FieldValue.serverTimestamp()});currentUser={email:e,uid:cred.user.uid};localStorage.setItem('workbuddy_user',JSON.stringify(currentUser));initApp();}else{if(localStorage.getItem('local_user_'+e))throw new Error('已注册');localStorage.setItem('local_user_'+e,JSON.stringify({email:e,password:p}));currentUser={email:e,uid:e};localStorage.setItem('workbuddy_user',JSON.stringify(currentUser));initApp();}}catch(err){er.textContent=err.message;er.style.display='block';}btn.disabled=false;btn.textContent='注 册';}
 function handleLogout(){if(authUnsub){authUnsub();authUnsub=null;}if(firebaseInitialized)firebase.auth().signOut();localStorage.removeItem('workbuddy_user');currentUser=null;currentExercise=null;document.getElementById('app').classList.remove('active');document.getElementById('login-overlay').style.display='flex';}
-if(firebaseInitialized){authUnsub=firebase.auth().onAuthStateChanged(async user=>{try{if(user){if(document.getElementById('remember-me').checked)localStorage.setItem('workbuddy_user',JSON.stringify({email:user.email,uid:user.uid}));currentUser={email:user.email,uid:user.uid};progress={completedLevels:[]};try{const doc=await db.collection('users').doc(user.uid).get();if(doc.exists&&doc.data().progress){const fp=doc.data().progress;if(fp.completedLevels&&Array.isArray(fp.completedLevels))fp.completedLevels.forEach(id=>{if(!progress.completedLevels.includes(id))progress.completedLevels.push(id);});}}catch(e){}loadLocalProgress();initApp();}else if(localStorage.getItem('workbuddy_user')){currentUser=JSON.parse(localStorage.getItem('workbuddy_user'));progress={completedLevels:[]};loadLocalProgress();initApp();}}catch(e){showError('登录状态加载失败: '+e.message);}});}
-function loadLocalProgress(){if(!progress.completedLevels)progress.completedLevels=[];const k='wb_progress_'+(currentUser?currentUser.email||currentUser.uid:'default');const s=localStorage.getItem(k);if(s){try{const p=JSON.parse(s);if(p.completedLevels&&Array.isArray(p.completedLevels))p.completedLevels.forEach(id=>{if(!progress.completedLevels.includes(id))progress.completedLevels.push(id);});}catch(e){}}saveProgress();}
-function saveProgress(){if(!progress.completedLevels)progress.completedLevels=[];const k='wb_progress_'+(currentUser?currentUser.email||currentUser.uid:'default');localStorage.setItem(k,JSON.stringify(progress));if(firebaseInitialized&&currentUser&&currentUser.uid)db.collection('users').doc(currentUser.uid).update({progress}).catch(()=>{});}
-function isUnlocked(id){return id===1||(progress.completedLevels||[]).includes(id-1);}
-function getLevelStatus(id){if(!isUnlocked(id))return'locked';if((progress.completedLevels||[]).includes(id))return'completed';if(currentExercise&&currentExercise.id===id)return'inprogress';return'unlocked';}
-function completeLevel(id){if(!progress.completedLevels.includes(id)){progress.completedLevels.push(id);saveProgress();renderChallengeList();updateStatusLabel('completed');showToast('✅','第'+id+'关已完成！'+(id<20?' 第'+(id+1)+'关已解锁。':' 🎉恭喜通关所有关卡！'));renderHomePage();}}
+if(firebaseInitialized){authUnsub=firebase.auth().onAuthStateChanged(async user=>{try{if(user){if(document.getElementById('remember-me').checked)localStorage.setItem('workbuddy_user',JSON.stringify({email:user.email,uid:user.uid}));currentUser={email:user.email,uid:user.uid};controlProgress={completedLevels:[]};halProgress={completedLevels:[]};try{const doc=await db.collection('users').doc(user.uid).get();if(doc.exists){const d=doc.data();if(d.controlProgress&&d.controlProgress.completedLevels)d.controlProgress.completedLevels.forEach(id=>{if(!controlProgress.completedLevels.includes(id))controlProgress.completedLevels.push(id);});if(d.halProgress&&d.halProgress.completedLevels)d.halProgress.completedLevels.forEach(id=>{if(!halProgress.completedLevels.includes(id))halProgress.completedLevels.push(id);});}}catch(e){}loadLocalProgress();initApp();}else if(localStorage.getItem('workbuddy_user')){currentUser=JSON.parse(localStorage.getItem('workbuddy_user'));controlProgress={completedLevels:[]};halProgress={completedLevels:[]};loadLocalProgress();initApp();}}catch(e){showError('登录状态加载失败: '+e.message);}});}
+function loadLocalProgress(){const sufx=currentUser?currentUser.email||currentUser.uid:'default';
+    [controlProgress,halProgress].forEach((prog,i)=>{
+        if(!prog.completedLevels)prog.completedLevels=[];
+        const k=i===0?'wb_progress_control_'+sufx:'wb_progress_hal_'+sufx;
+        const s=localStorage.getItem(k);
+        if(s){try{const p=JSON.parse(s);if(p.completedLevels&&Array.isArray(p.completedLevels))p.completedLevels.forEach(id=>{if(!prog.completedLevels.includes(id))prog.completedLevels.push(id);});}catch(e){}}
+    });
+    saveProgress();}
+function saveProgress(){const sufx=currentUser?currentUser.email||currentUser.uid:'default';
+    [controlProgress,halProgress].forEach((prog,i)=>{
+        if(!prog.completedLevels)prog.completedLevels=[];
+        const k=i===0?'wb_progress_control_'+sufx:'wb_progress_hal_'+sufx;
+        localStorage.setItem(k,JSON.stringify(prog));
+    });
+    if(firebaseInitialized&&currentUser&&currentUser.uid){
+        db.collection('users').doc(currentUser.uid).update({
+            controlProgress:controlProgress,
+            halProgress:halProgress
+        }).catch(()=>{});
+    }}
+function isUnlocked(id){return id===1||(currentProgress.completedLevels||[]).includes(id-1);}
+function getLevelStatus(id){if(!isUnlocked(id))return'locked';if((currentProgress.completedLevels||[]).includes(id))return'completed';if(currentExercise&&currentExercise.id===id)return'inprogress';return'unlocked';}
+function completeLevel(id){if(!currentProgress.completedLevels.includes(id)){currentProgress.completedLevels.push(id);saveProgress();renderChallengeList();updateStatusLabel('completed');const maxId=Math.max(...currentDataset.map(e=>e.id));showToast('✅','第'+id+'关已完成！'+(id<maxId?' 第'+(id+1)+'关已解锁。':' 🎉恭喜通关所有关卡！'));renderHomePage();}}
 function showError(msg){const ep=document.getElementById('error-page');document.getElementById('err-text').textContent=msg;ep.style.display='flex';document.getElementById('login-overlay').style.display='none';document.getElementById('app').classList.remove('active');}
 function retryInit(){initError=null;document.getElementById('error-page').style.display='none';initApp();}
 
@@ -491,10 +808,13 @@ function showCategory(catId){
     else{document.getElementById('level-page').classList.add('show');document.getElementById('back-btn').classList.add('show');}
     currentCategoryId=catId;const cat=categories.find(c=>c.id===catId);
     if(cat){document.getElementById('sidebar-cat-name').textContent=cat.name;document.getElementById('sidebar-cat-count').textContent=cat.count+'题';}
+    // Set current dataset
+    if(catId==='hal'){currentDataset=halData;currentProgress=halProgress;}
+    else{currentDataset=practiceData;currentProgress=controlProgress;}
     // Reset content area with animation
     const mc=document.getElementById('main-content');mc.classList.remove('anim-slide');void mc.offsetWidth;mc.classList.add('anim-slide');
-    renderChallengeList();practiceData.forEach(ex=>{const s=localStorage.getItem('tab_state_'+ex.id);if(s)tabState[ex.id]={activeTab:s};});
-    const fu=practiceData.find(e=>isUnlocked(e.id));if(fu)selectExercise(fu.id);
+    renderChallengeList();currentDataset.forEach(ex=>{const s=localStorage.getItem('tab_state_'+ex.id);if(s)tabState[ex.id]={activeTab:s};});
+    const fu=currentDataset.find(e=>isUnlocked(e.id));if(fu)selectExercise(fu.id);
 }
 function goHome(){showToast('','',0);navigate('#home');}
 
@@ -509,7 +829,9 @@ function renderHomePage(){
     const ucEl=document.getElementById('home-user-count');
     if(ucEl&&firebaseInitialized){getUserCount().then(c=>{ucEl.textContent='👥 当前注册人数：'+c+'/'+MAX_USERS+(currentUser?'  |  已登录：'+currentUser.email:'');});}else if(ucEl){ucEl.textContent='';}
     categories.forEach(cat=>{
-        const total=cat.count;const comp=(progress.completedLevels||[]).length;
+        const total=cat.count;
+        const p=cat.id==='hal'?halProgress:controlProgress;
+        const comp=(p.completedLevels||[]).length;
         const pct=total>0?Math.round(comp/total*100):0;
         const card=document.createElement('div');card.className='cat-card';
         card.innerHTML='<div class="cat-icon">'+cat.icon+'</div><div class="cat-name">'+cat.name+'</div><div class="cat-desc">'+cat.description+'</div><div class="cat-progress">'+
@@ -525,8 +847,8 @@ function renderHomePage(){
 // ===================================================================
 function renderChallengeList(){
     const c=document.getElementById('challenge-list');c.innerHTML='';
-    const g={};practiceData.forEach(e=>{if(!g[e.category])g[e.category]=[];g[e.category].push(e);});
-    let avail=0,comp=0;practiceData.forEach(e=>{const s=getLevelStatus(e.id);if(s==='unlocked'||s==='inprogress')avail++;if(s==='completed')comp++;});
+    const g={};currentDataset.forEach(e=>{if(!g[e.category])g[e.category]=[];g[e.category].push(e);});
+    let avail=0,comp=0;currentDataset.forEach(e=>{const s=getLevelStatus(e.id);if(s==='unlocked'||s==='inprogress')avail++;if(s==='completed')comp++;});
     document.getElementById('stat-available').textContent=avail;document.getElementById('stat-completed').textContent=comp;
     LEVEL_ORDER.forEach(lv=>{if(!g[lv])return;
         const gr=document.createElement('div');gr.className='level-group';
@@ -549,7 +871,7 @@ function renderChallengeList(){
 // SELECT EXERCISE
 // ===================================================================
 function selectExercise(id){
-    const ex=practiceData.find(e=>e.id===id);if(!ex)return;if(!isUnlocked(id)){showToast('🔒','未解锁');return;}
+    const ex=currentDataset.find(e=>e.id===id);if(!ex)return;if(!isUnlocked(id)){showToast('🔒','未解锁');return;}
     currentExercise=ex;
     document.querySelectorAll('.challenge-item').forEach(el=>el.classList.toggle('active',parseInt(el.dataset.id)===id));
     document.getElementById('detail-title').textContent='#'+String(id).padStart(2,'0')+' '+ex.title;
