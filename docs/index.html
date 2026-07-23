@@ -875,6 +875,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 async function initApp(){
     document.getElementById('app').classList.add('active');
+    loadLocalProgress();
     updateUserCountBadge();
     try{await initEditors();handleRoute();}catch(e){showError('初始化失败: '+e.message);}
 }
