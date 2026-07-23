@@ -222,6 +222,14 @@ a{color:#3794ff;text-decoration:none}
 main{flex:1;overflow:hidden;display:flex;flex-direction:column}
 </style></head><body>
 
+<script>
+// ⚡ 立即执行的登录核心（在任何CDN加载之前）
+window.__loginReady=true;
+window.switchAuthTab=function(t){['login','register'].forEach(function(x){var el=document.getElementById('tab-'+x);if(el)el.className='tab'+(x===t?' active':'');});document.getElementById('auth-login').style.display=t==='login'?'block':'none';document.getElementById('auth-register').style.display=t==='register'?'block':'none';var le=document.getElementById('login-err'),re=document.getElementById('reg-err');if(le)le.style.display='none';if(re)re.style.display='none';};
+window.handleLogin=function(){var e=document.getElementById('login-email').value.trim(),p=document.getElementById('login-pass').value.trim(),er=document.getElementById('login-err'),btn=document.getElementById('login-btn');if(!e||!p){er.textContent='请输入邮箱和密码';er.style.display='block';return;}btn.disabled=true;btn.textContent='登录中...';try{var s=localStorage.getItem('local_user_'+e);if(!s)throw new Error('用户不存在');var d=JSON.parse(s);if(d.password!==p)throw new Error('密码错误');window.currentUser={email:e,uid:e};window.initApp&&window.initApp();}catch(err){er.textContent=err.message;er.style.display='block';}btn.disabled=false;btn.textContent='登 录';};
+window.handleRegister=function(){var e=document.getElementById('reg-email').value.trim(),p=document.getElementById('reg-pass').value.trim(),c=document.getElementById('reg-confirm').value.trim(),er=document.getElementById('reg-err'),btn=document.getElementById('reg-btn');if(!e||!p){er.textContent='请填写邮箱和密码';er.style.display='block';return;}if(p.length<6){er.textContent='密码至少6位';er.style.display='block';return;}if(p!==c){er.textContent='两次密码不一致';er.style.display='block';return;}btn.disabled=true;btn.textContent='注册中...';try{if(localStorage.getItem('local_user_'+e))throw new Error('已注册');localStorage.setItem('local_user_'+e,JSON.stringify({email:e,password:p}));window.currentUser={email:e,uid:e};localStorage.setItem('workbuddy_user',JSON.stringify(window.currentUser));window.initApp&&window.initApp();}catch(err){er.textContent=err.message;er.style.display='block';}btn.disabled=false;btn.textContent='注 册';};
+</script>
+
 <!-- TOAST CONTAINER -->
 <div class="toast-container" id="toast-container"></div>
 
@@ -324,11 +332,11 @@ main{flex:1;overflow:hidden;display:flex;flex-direction:column}
   - JSZip: 保存到本地时的 ZIP 下载回退方案
   如果网络不通，请确保设备已联网。
 -->
-<script async src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script async src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-<script async src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-<script async src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
-<script async src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
 <script>
 // ===================================================================
