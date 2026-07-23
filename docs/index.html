@@ -350,7 +350,7 @@ const LEVEL_ORDER = ['基础篇','进阶篇','工程师篇','综合项目'];
 // PRACTICE DATA (20道)
 // ===================================================================
 const practiceData = [
-  {id:1,category:"基础篇",title:"GPIO模块化封装与按键消抖",goal:"用结构体封装GPIO端口、引脚、模式，实现按键消抖状态机。",requirements:["定义 gpio_t 结构体","实现 gpio_init/gpio_write/gpio_read","10ms延时消抖状态机"],hints:["volatile 修饰寄存器","3状态：空闲→抖动确认→稳定"],testMethod:"两个按键控制两个LED亮灭，串口打印事件。",exampleCode:"/* gpio_t 结构体 + 按键消抖状态机 */\n\n#include "stdint.h"\n#include "stdio.h"\n\n// 简单的 GPIO 模拟结构体\n\ntypedef struct {\n    uint8_t pin_state;\n    uint8_t direction;\n} gpio_t;\n\n// 按键消抖状态机状态定义\n\ntypedef enum {\n    KEY_IDLE = 0,\n    KEY_PRESSED_DEBOUNCE,\n    KEY_RELEASED_DEBOUNCE\n} key_state_t;\n\n// 简单的延时函数模拟\n\nvoid delay_ms(uint32_t ms) {\n    // 在真实嵌入式环境中，这里会是定时器操作\n    // 在PC模拟环境中，可以使用空循环或 sleep\n    for(volatile uint32_t i = 0; i < ms * 1000; i++);\n}\n\nint main() {\n    gpio_t my_button = {0};\n    key_state_t current_state = KEY_IDLE;\n\n    printf("System Initialized.\\n");\n\n    while(1) {\n        // 模拟读取按键电平 (0表示按下，1表示松开)\n        // 在实际硬件中，这里会是 HAL_GPIO_ReadPin()\n        my_button.pin_state = read_hardware_pin();\n\n        switch(current_state) {\n            case KEY_IDLE:\n                if(my_button.pin_state == 0) {\n                    current_state = KEY_PRESSED_DEBOUNCE;\n                }\n                break;\n\n            case KEY_PRESSED_DEBOUNCE:\n                delay_ms(20); // 消抖延时\n                if(my_button.pin_state == 0) {\n                    printf("Key Pressed and Debounced!\\n");\n                    current_state = KEY_RELEASED_DEBOUNCE;\n                } else {\n                    current_state = KEY_IDLE;\n                }\n                break;\n\n            case KEY_RELEASED_DEBOUNCE:\n                delay_ms(20);\n                if(my_button.pin_state == 1) {\n                    current_state = KEY_IDLE;\n                }\n                break;\n        }\n    }\n    return 0;\n}",files:[{name:"Inc",type:"folder",children:[{name:"gpio.h",type:"file",content:"// gpio.h"},{name:"button.h",type:"file",content:"// button.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"gpio.c",type:"file",content:"// gpio.c"},{name:"button.c",type:"file",content:"// button.c"}]}],activeFile:"Src/main.c"},
+  {id:1,category:"基础篇",title:"GPIO模块化封装与按键消抖",goal:"用结构体封装GPIO端口、引脚、模式，实现按键消抖状态机。",requirements:["定义 gpio_t 结构体","实现 gpio_init/gpio_write/gpio_read","10ms延时消抖状态机"],hints:["volatile 修饰寄存器","3状态：空闲→抖动确认→稳定"],testMethod:"两个按键控制两个LED亮灭，串口打印事件。",exampleCode:"/* gpio_t 结构体 + 按键消抖状态机 */\n\n#include <stdint.h>\n#include <stdio.h>\n\n// 简单的 GPIO 模拟结构体\n\ntypedef struct {\n    uint8_t pin_state;\n    uint8_t direction;\n} gpio_t;\n\n// 按键消抖状态机状态定义\n\ntypedef enum {\n    KEY_IDLE = 0,\n    KEY_PRESSED_DEBOUNCE,\n    KEY_RELEASED_DEBOUNCE\n} key_state_t;\n\n// 简单的延时函数模拟\n\nvoid delay_ms(uint32_t ms) {\n    // 在真实嵌入式环境中，这里会是定时器操作\n    // 在PC模拟环境中，可以使用空循环或 sleep\n    for(volatile uint32_t i = 0; i < ms * 1000; i++);\n}\n\nint main() {\n    gpio_t my_button = {0};\n    key_state_t current_state = KEY_IDLE;\n\n    printf(\"System Initialized.\\n\");\n\n    while(1) {\n        // 模拟读取按键电平 (0表示按下，1表示松开)\n        // 在实际硬件中，这里会是 HAL_GPIO_ReadPin()\n        my_button.pin_state = read_hardware_pin();\n\n        switch(current_state) {\n            case KEY_IDLE:\n                if(my_button.pin_state == 0) {\n                    current_state = KEY_PRESSED_DEBOUNCE;\n                }\n                break;\n\n            case KEY_PRESSED_DEBOUNCE:\n                delay_ms(20); // 消抖延时\n                if(my_button.pin_state == 0) {\n                    printf(\"Key Pressed and Debounced!\\n\");\n                    current_state = KEY_RELEASED_DEBOUNCE;\n                } else {\n                    current_state = KEY_IDLE;\n                }\n                break;\n\n            case KEY_RELEASED_DEBOUNCE:\n                delay_ms(20);\n                if(my_button.pin_state == 1) {\n                    current_state = KEY_IDLE;\n                }\n                break;\n        }\n    }\n    return 0;\n}",files:[{name:"Inc",type:"folder",children:[{name:"gpio.h",type:"file",content:"// gpio.h"},{name:"button.h",type:"file",content:"// button.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"gpio.c",type:"file",content:"// gpio.c"},{name:"button.c",type:"file",content:"// button.c"}]}],activeFile:"Src/main.c"},
   {id:2,category:"基础篇",title:"系统时钟与毫秒级软件定时器",goal:"基于SysTick实现毫秒级延时和软件定时器池。",requirements:["delay_ms()","swtmr_create/start/stop/delete","单向链表管理"],hints:["SysTick中断递减","临界区保护","节点字段：周期/剩余/回调/标志"],testMethod:"3个定时器100/200/500ms翻转LED。",exampleCode:"// 第2关",files:[{name:"Inc",type:"folder",children:[{name:"swtmr.h",type:"file",content:"// swtmr.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"swtmr.c",type:"file",content:"// swtmr.c"}]}],activeFile:"Src/main.c"},
   {id:3,category:"基础篇",title:"微秒级延时与PWM生成",goal:"使用通用定时器产生微秒级延时和PWM信号。",requirements:["delay_us()","pwm_init(TIM,freq,duty)"],hints:["PWM=时钟/(ARR+1)/(PSC+1)","CCR/(ARR+1)=占空比"],testMethod:"1kHz/50%方波",exampleCode:"// 第3关",files:[{name:"Inc",type:"folder",children:[{name:"pwm.h",type:"file",content:"// pwm.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"}]}],activeFile:"Src/main.c"},
   {id:4,category:"基础篇",title:"ADC采样与均值滤波",goal:"配置ADC+DMA实现连续采样和滑动平均滤波。",requirements:["ADC1连续+DMA环形缓冲区","adc_read_average()","adc_get_raw()"],hints:["DMA半满中断","位运算取模","2^n大小缓冲区"],testMethod:"电位器分压，串口对比原始/滤波值。",exampleCode:"// 第4关",files:[{name:"Inc",type:"folder",children:[{name:"adc.h",type:"file",content:"// adc.h"}]},{name:"Src",type:"folder",children:[{name:"main.c",type:"file",content:"// main.c"},{name:"adc.c",type:"file",content:"// adc.c"}]}],activeFile:"Src/main.c"},
@@ -813,8 +813,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // 第一题（#01 GPIO）的完整示例代码
     var firstQuestionCode = '/* gpio_t 结构体 + 按键消抖状态机 */\n' +
 '\n' +
-'#include "stdint.h"\n' +
-'#include "stdio.h"\n' +
+'#include <stdint.h>\n' +
+'#include <stdio.h>\n' +
 '\n' +
 '// 简单的 GPIO 模拟结构体\n' +
 '\n' +
@@ -842,7 +842,7 @@ document.addEventListener('DOMContentLoaded', function() {
 '    gpio_t my_button = {0};\n' +
 '    key_state_t current_state = KEY_IDLE;\n' +
 '\n' +
-'    printf("System Initialized.\\n");\n' +
+'    printf(\"System Initialized.\\n\");\n' +
 '\n' +
 '    while(1) {\n' +
 '        my_button.pin_state = read_hardware_pin();\n' +
@@ -857,7 +857,7 @@ document.addEventListener('DOMContentLoaded', function() {
 '            case KEY_PRESSED_DEBOUNCE:\n' +
 '                delay_ms(20);\n' +
 '                if(my_button.pin_state == 0) {\n' +
-'                    printf("Key Pressed and Debounced!\\n");\n' +
+'                    printf(\"Key Pressed and Debounced!\\n\");\n' +
 '                    current_state = KEY_RELEASED_DEBOUNCE;\n' +
 '                } else {\n' +
 '                    current_state = KEY_IDLE;\n' +
